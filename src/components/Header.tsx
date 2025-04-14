@@ -1,44 +1,73 @@
 
-import { Moon, Sun, Languages } from "lucide-react";
+import { Globe2, Moon, Sun, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCipher } from "@/contexts/CipherContext";
+import { Link } from "react-router-dom";
 
-const Header: React.FC = () => {
-  const { isArabic, isDarkMode, toggleLanguage, toggleDarkMode } = useCipher();
+interface HeaderTexts {
+  title: string;
+  toggleLanguage: string;
+  toggleDarkMode: string;
+  help: string;
+}
+
+const englishText: HeaderTexts = {
+  title: "Arabic Cipher Scribe",
+  toggleLanguage: "Switch to Arabic",
+  toggleDarkMode: "Toggle dark mode",
+  help: "Help & Guide"
+};
+
+const arabicText: HeaderTexts = {
+  title: "مشفر النصوص العربي",
+  toggleLanguage: "التبديل إلى الإنجليزية",
+  toggleDarkMode: "تبديل الوضع المظلم",
+  help: "المساعدة والدليل"
+};
+
+const Header = () => {
+  const { isArabic, toggleLanguage, isDarkMode, toggleDarkMode } = useCipher();
+  const text = isArabic ? arabicText : englishText;
 
   return (
-    <header className="w-full p-4 flex items-center justify-between">
-      <div className="flex items-center space-x-3 rtl:space-x-reverse">
-        <div className="h-9 w-9 rounded-lg bg-cipher-purple text-white flex items-center justify-center">
-          <span className="font-bold text-lg">ش</span>
+    <header className={`w-full px-6 py-4 bg-background ${isArabic ? "rtl font-arabic" : ""}`}>
+      <div className="container flex justify-between items-center">
+        <Link to="/" className="flex items-center gap-2">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
+            CS
+          </div>
+          <h1 className="text-xl md:text-2xl font-bold">{text.title}</h1>
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/help" title={text.help}>
+              <BookOpen className="h-5 w-5" />
+            </Link>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleLanguage} 
+            title={text.toggleLanguage}
+          >
+            <Globe2 className="h-5 w-5" />
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleDarkMode} 
+            title={text.toggleDarkMode}
+          >
+            {isDarkMode ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+          </Button>
         </div>
-        <h1 className={`text-xl font-bold ${isArabic ? "font-arabic" : ""}`}>
-          {isArabic ? "مشفر النصوص العربي" : "Arabic Cipher Scribe"}
-        </h1>
-      </div>
-      
-      <div className="flex items-center space-x-2 rtl:space-x-reverse">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleLanguage}
-          title={isArabic ? "Switch to English" : "التبديل إلى العربية"}
-        >
-          <Languages className="h-5 w-5" />
-        </Button>
-        
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleDarkMode}
-          title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-        >
-          {isDarkMode ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
-        </Button>
       </div>
     </header>
   );

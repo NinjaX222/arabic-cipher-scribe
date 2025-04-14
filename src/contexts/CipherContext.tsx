@@ -34,9 +34,21 @@ export const CipherProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setKeys(listStoredKeys());
     
     // Check for user's preferred color scheme
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setIsDarkMode(true);
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const savedDarkMode = localStorage.getItem('cipher-dark-mode');
+    const darkModeEnabled = savedDarkMode !== null ? savedDarkMode === 'true' : prefersDark;
+    
+    setIsDarkMode(darkModeEnabled);
+    if (darkModeEnabled) {
       document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Check saved language preference
+    const savedLanguage = localStorage.getItem('cipher-language');
+    if (savedLanguage === 'ar') {
+      setIsArabic(true);
     }
   }, []);
 
@@ -44,13 +56,17 @@ export const CipherProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     try {
       storeKey(id, key, expirationHours);
       setKeys(listStoredKeys());
-      toast.success("مفتاح جديد تم إضافته بنجاح", {
-        description: `تم إضافة المفتاح بمعرف: ${id}`
+      toast.success(isArabic ? "مفتاح جديد تم إضافته بنجاح" : "New key added successfully", {
+        description: isArabic 
+          ? `تم إضافة المفتاح بمعرف: ${id}`
+          : `Key added with ID: ${id}`
       });
     } catch (error) {
       console.error('Error adding key:', error);
-      toast.error("فشل في إضافة المفتاح", { 
-        description: "حدث خطأ أثناء تخزين المفتاح"
+      toast.error(isArabic ? "فشل في إضافة المفتاح" : "Failed to add key", { 
+        description: isArabic 
+          ? "حدث خطأ أثناء تخزين المفتاح"
+          : "An error occurred while storing the key"
       });
     }
   };
@@ -62,13 +78,17 @@ export const CipherProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (activeKeyId === id) {
         setActiveKeyId(null);
       }
-      toast.success("تم حذف المفتاح", { 
-        description: `تم حذف المفتاح بمعرف: ${id}`
+      toast.success(isArabic ? "تم حذف المفتاح" : "Key deleted", { 
+        description: isArabic 
+          ? `تم حذف المفتاح بمعرف: ${id}`
+          : `Key with ID ${id} has been deleted`
       });
     } catch (error) {
       console.error('Error removing key:', error);
-      toast.error("فشل في حذف المفتاح", { 
-        description: "حدث خطأ أثناء حذف المفتاح"
+      toast.error(isArabic ? "فشل في حذف المفتاح" : "Failed to delete key", { 
+        description: isArabic 
+          ? "حدث خطأ أثناء حذف المفتاح"
+          : "An error occurred while deleting the key"
       });
     }
   };
@@ -80,12 +100,18 @@ export const CipherProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const toggleLanguage = () => {
-    setIsArabic(prev => !prev);
+    setIsArabic(prev => {
+      const newValue = !prev;
+      localStorage.setItem('cipher-language', newValue ? 'ar' : 'en');
+      return newValue;
+    });
   };
 
   const toggleDarkMode = () => {
     setIsDarkMode(prev => {
       const newMode = !prev;
+      localStorage.setItem('cipher-dark-mode', String(newMode));
+      
       if (newMode) {
         document.documentElement.classList.add('dark');
       } else {
