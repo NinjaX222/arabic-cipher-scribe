@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -82,7 +81,6 @@ const EncryptionForm: React.FC = () => {
   const { isArabic } = useCipher();
   const text = isArabic ? arabicText : englishText;
   
-  // State variables
   const [mode, setMode] = useState<"encrypt" | "decrypt">("encrypt");
   const [input, setInput] = useState("");
   const [password, setPassword] = useState("");
@@ -91,6 +89,14 @@ const EncryptionForm: React.FC = () => {
   const [encryptionType, setEncryptionType] = useState<"simple" | "double">("simple");
   const [expiration, setExpiration] = useState("24");
   const [usePassword, setUsePassword] = useState(true);
+
+  const handleModeChange = (newMode: "encrypt" | "decrypt") => {
+    setMode(newMode);
+    setInput("");
+    setPassword("");
+    setSecondPassword("");
+    setResult("");
+  };
 
   const handleSubmit = () => {
     try {
@@ -167,7 +173,7 @@ const EncryptionForm: React.FC = () => {
       <Tabs
         defaultValue="encrypt"
         className="w-full"
-        onValueChange={(value) => setMode(value as "encrypt" | "decrypt")}
+        onValueChange={(value) => handleModeChange(value as "encrypt" | "decrypt")}
       >
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="encrypt">{text.encrypt}</TabsTrigger>
