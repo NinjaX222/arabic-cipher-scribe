@@ -4,14 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { mic, micOff, play, pause } from "lucide-react";
+import { Mic, MicOff, Play, Pause } from "lucide-react";
 import { encryptAES, decryptAES } from "@/utils/encryption";
 import { toast } from "sonner";
 
+// Use new PascalCase icon names
 function getIcon(name: string) {
-  const icons = { mic, micOff, play, pause };
+  const icons: Record<string, React.ComponentType<{ className?: string }>> = {
+    mic: Mic,
+    micOff: MicOff,
+    play: Play,
+    pause: Pause,
+  };
   const IconComp = icons[name];
-  return <IconComp className="h-6 w-6" />;
+  return IconComp ? <IconComp className="h-6 w-6" /> : null;
 }
 
 const AudioEncryptor: React.FC = () => {
@@ -277,3 +283,4 @@ const AudioEncryptor: React.FC = () => {
 };
 
 export default AudioEncryptor;
+
