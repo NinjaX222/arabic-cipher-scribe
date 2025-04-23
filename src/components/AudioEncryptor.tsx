@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mic, MicOff, Play, Pause } from "lucide-react";
 import { encryptAES, decryptAES } from "@/utils/encryption";
 import { toast } from "sonner";
+import { useCipher } from "@/contexts/CipherContext";
 
-// Use new PascalCase icon names
 function getIcon(name: string) {
   const icons: Record<string, React.ComponentType<{ className?: string }>> = {
     mic: Mic,
@@ -21,6 +20,7 @@ function getIcon(name: string) {
 }
 
 const AudioEncryptor: React.FC = () => {
+  const { isArabic } = useCipher();
   const [recording, setRecording] = useState(false);
   const [audioURL, setAudioURL] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -28,7 +28,6 @@ const AudioEncryptor: React.FC = () => {
   const [decryptedAudioURL, setDecryptedAudioURL] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"encrypt"|"decrypt">("encrypt");
-  const [isArabic, setIsArabic] = useState(false);
   const [playing, setPlaying] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -47,9 +46,6 @@ const AudioEncryptor: React.FC = () => {
     noAudio: isArabic ? "سجّل أو حمّل مقطع صوتي." : "Please record or upload an audio.",
     copy: isArabic ? "نسخ الشيفرة" : "Copy Cipher",
     chooseFile: isArabic ? "تحميل ملف صوتي" : "Upload Audio File",
-    ar: isArabic ? "العربية" : "Arabic",
-    en: isArabic ? "English" : "English",
-    switchLang: isArabic ? "Switch to English" : "التبديل إلى العربية"
   };
 
   // التسجيل الصوتي
@@ -172,18 +168,11 @@ const AudioEncryptor: React.FC = () => {
   }
 
   return (
-    <div className={`w-full max-w-2xl mx-auto glass-card p-5 mb-8 ${isArabic? "rtl font-arabic":""}`}>
+    <div className={`w-full max-w-2xl mx-auto glass-card p-5 mb-8 ${isArabic ? "rtl font-arabic" : ""}`}>
       <div className="flex justify-between mb-4">
-        <h2 className="text-lg font-bold">{isArabic ? "تشفير وفك تشفير الصوت" : "Audio Encrypt & Decrypt"}</h2>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsArabic(x=>!x)}
-          title={TXT.switchLang}
-        >
-          {isArabic ? TXT.en : TXT.ar}
-        </Button>
+        <h2 className="text-lg font-bold">
+          {isArabic ? "تشفير وفك تشفير الصوت" : "Audio Encrypt & Decrypt"}
+        </h2>
       </div>
 
       <div className="flex flex-col md:flex-row gap-3">
@@ -283,4 +272,3 @@ const AudioEncryptor: React.FC = () => {
 };
 
 export default AudioEncryptor;
-
