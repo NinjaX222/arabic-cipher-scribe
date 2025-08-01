@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CipherProvider } from "./contexts/CipherContext";
 import Index from "./pages/Index";
 import Help from "./pages/Help";
+import ImageEncryption from "./pages/ImageEncryption";
+import VideoEncryption from "./pages/VideoEncryption";
 import NotFound from "./pages/NotFound";
 
 // Add support for crypto-js
@@ -30,6 +32,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/help" element={<Help />} />
+            <Route path="/image-encryption" element={<ImageEncryption />} />
+            <Route path="/video-encryption" element={<VideoEncryption />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

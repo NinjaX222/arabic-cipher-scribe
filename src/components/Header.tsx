@@ -1,8 +1,14 @@
 
-import { Globe2, Moon, Sun, BookOpen } from "lucide-react";
+import { Globe2, Moon, Sun, BookOpen, Menu, ImageIcon, VideoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCipher } from "@/contexts/CipherContext";
 import { Link } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface HeaderTexts {
   title: string;
@@ -40,11 +46,33 @@ const Header = () => {
         </Link>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/help" title={text.help}>
-              <BookOpen className="h-5 w-5" />
-            </Link>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/image-encryption" className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  {isArabic ? "تشفير الصور" : "Image Encryption"}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/video-encryption" className="flex items-center gap-2">
+                  <VideoIcon className="h-4 w-4" />
+                  {isArabic ? "تشفير الفيديو" : "Video Encryption"}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/help" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  {text.help}
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           
           <Button 
             variant="ghost" 
