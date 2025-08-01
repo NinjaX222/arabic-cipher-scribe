@@ -1,5 +1,5 @@
 
-import { Globe2, Moon, Sun, BookOpen, Menu, ImageIcon, VideoIcon } from "lucide-react";
+import { Globe2, Moon, Sun, BookOpen, Menu, ImageIcon, VideoIcon, KeyRound, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCipher } from "@/contexts/CipherContext";
 import { Link } from "react-router-dom";
@@ -7,6 +7,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -63,6 +64,19 @@ const Header = () => {
                 <Link to="/video-encryption" className="flex items-center gap-2">
                   <VideoIcon className="h-4 w-4" />
                   {isArabic ? "تشفير الفيديو" : "Video Encryption"}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/password-generator" className="flex items-center gap-2">
+                  <KeyRound className="h-4 w-4" />
+                  {isArabic ? "مولد كلمات المرور" : "Password Generator"}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/share" className="flex items-center gap-2">
+                  <Share2 className="h-4 w-4" />
+                  {isArabic ? "مشاركة التطبيق" : "Share App"}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
