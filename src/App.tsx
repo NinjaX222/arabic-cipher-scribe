@@ -8,6 +8,8 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { CipherProvider } from "./contexts/CipherContext";
 import { AppSidebar } from "./components/AppSidebar";
 import Index from "./pages/Index";
+import TextEncryption from "./pages/TextEncryption";
+import AudioEncryption from "./pages/AudioEncryption";
 import Help from "./pages/Help";
 import ImageEncryption from "./pages/ImageEncryption";
 import VideoEncryption from "./pages/VideoEncryption";
@@ -42,6 +44,8 @@ const App = () => (
               <main className="flex-1">
                 <Routes>
                   <Route path="/" element={<Index />} />
+                  <Route path="/text-encryption" element={<TextEncryption />} />
+                  <Route path="/audio-encryption" element={<AudioEncryption />} />
                   <Route path="/help" element={<Help />} />
                   <Route path="/image-encryption" element={<ImageEncryption />} />
                   <Route path="/video-encryption" element={<VideoEncryption />} />

@@ -10,7 +10,9 @@ import {
   LogIn, 
   UserPlus,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  LockIcon,
+  Mic
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
@@ -75,6 +77,8 @@ export function AppSidebar() {
   ];
 
   const toolItems = [
+    { title: isArabic ? "تشفير النصوص" : "Text Encryption", url: "/text-encryption", icon: LockIcon },
+    { title: isArabic ? "تشفير الصوت" : "Audio Encryption", url: "/audio-encryption", icon: Mic },
     { title: text.imageEncryption, url: "/image-encryption", icon: ImageIcon },
     { title: text.videoEncryption, url: "/video-encryption", icon: VideoIcon },
     { title: text.passwordGenerator, url: "/password-generator", icon: KeyRound },
