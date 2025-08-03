@@ -20,8 +20,9 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Inter', 'Arial', 'sans-serif'],
-				arabic: ['Amiri', 'serif'],
+				sans: ['Cairo', 'Inter', 'system-ui', 'sans-serif'],
+				arabic: ['Cairo', 'Amiri', 'system-ui', 'sans-serif'],
+				inter: ['Inter', 'system-ui', 'sans-serif']
 			},
 			colors: {
 				border: 'hsl(var(--border))',

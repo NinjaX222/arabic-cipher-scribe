@@ -102,13 +102,35 @@ export function AppSidebar() {
     >
       <SidebarHeader className="p-4">
         {!collapsed && (
-          <div className={`flex items-center gap-2 ${isArabic ? "rtl font-arabic" : ""}`}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-sm">
-              CS
+          <div className={`flex items-center gap-3 ${isArabic ? "rtl font-arabic" : ""}`}>
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 via-purple-600 to-blue-600 flex items-center justify-center text-white shadow-lg">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
             </div>
-            <h2 className="font-bold text-lg">
-              {isArabic ? "مشفر النصوص" : "Cipher Scribe"}
-            </h2>
+            <div className="flex flex-col">
+              <h2 className="font-bold text-lg bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent">
+                {isArabic ? "حارس التشفير" : "Cipher Guard"}
+              </h2>
+              <div className="text-xs text-muted-foreground font-medium">
+                {isArabic ? "حماية متقدمة" : "Advanced Security"}
+              </div>
+            </div>
+          </div>
+        )}
+        {collapsed && (
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 via-purple-600 to-blue-600 flex items-center justify-center text-white shadow-lg">
+                <Shield className="h-4 w-4" />
+              </div>
+              <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center">
+                <div className="w-1 h-1 bg-white rounded-full"></div>
+              </div>
+            </div>
           </div>
         )}
         <SidebarTrigger className={`${collapsed ? "mx-auto" : "ml-auto"} mt-2`} />
