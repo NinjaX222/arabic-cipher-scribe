@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { CipherProvider } from "./contexts/CipherContext";
 import { AppSidebar } from "./components/AppSidebar";
-import Header from "./components/Header";
 import Index from "./pages/Index";
 import TextEncryption from "./pages/TextEncryption";
 import AudioEncryption from "./pages/AudioEncryption";
@@ -42,10 +41,8 @@ const App = () => (
           <SidebarProvider>
             <div className="min-h-screen flex w-full">
               <AppSidebar />
-              <main className="flex-1 flex flex-col">
-                <Header />
-                <div className="flex-1">
-                  <Routes>
+              <main className="flex-1">
+                <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/text-encryption" element={<TextEncryption />} />
                     <Route path="/audio-encryption" element={<AudioEncryption />} />
@@ -60,9 +57,8 @@ const App = () => (
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </div>
-              </main>
-            </div>
+                </main>
+              </div>
           </SidebarProvider>
         </BrowserRouter>
       </TooltipProvider>
