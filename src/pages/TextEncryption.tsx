@@ -1,12 +1,14 @@
 import EncryptionForm from "@/components/EncryptionForm";
 import KeyManager from "@/components/KeyManager";
 import { useCipher } from "@/contexts/CipherContext";
+import Header from "@/components/Header";
 
 const TextEncryption = () => {
   const { isArabic } = useCipher();
   
   return (
     <div className="min-h-screen">
+      <Header />
       <div className="container px-4 py-8">
         <div className={`mb-8 ${isArabic ? "rtl font-arabic" : ""}`}>
           <h1 className="text-3xl font-bold mb-2">

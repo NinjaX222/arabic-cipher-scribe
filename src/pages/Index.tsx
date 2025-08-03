@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LockIcon, KeyRound, Mic, ImageIcon, VideoIcon, Share2 } from "lucide-react";
+import Header from "@/components/Header";
 
 const Index = () => {
   const { isArabic } = useCipher();
@@ -86,6 +87,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <Header />
       <div className="container px-4 py-8">
         {/* Hero Section */}
         <div className={`text-center mb-12 ${isArabic ? "rtl font-arabic" : ""}`}>
