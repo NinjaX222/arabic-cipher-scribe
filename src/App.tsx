@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { CipherProvider } from "./contexts/CipherContext";
 import { AppSidebar } from "./components/AppSidebar";
+import Header from "./components/Header";
 import Index from "./pages/Index";
 import TextEncryption from "./pages/TextEncryption";
 import AudioEncryption from "./pages/AudioEncryption";
@@ -41,22 +42,25 @@ const App = () => (
           <SidebarProvider>
             <div className="min-h-screen flex w-full">
               <AppSidebar />
-              <main className="flex-1">
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/text-encryption" element={<TextEncryption />} />
-                  <Route path="/audio-encryption" element={<AudioEncryption />} />
-                  <Route path="/help" element={<Help />} />
-                  <Route path="/image-encryption" element={<ImageEncryption />} />
-                  <Route path="/video-encryption" element={<VideoEncryption />} />
-                  <Route path="/password-generator" element={<PasswordGenerator />} />
-                  <Route path="/share" element={<ShareApp />} />
-                  <Route path="/privacy" element={<PrivacyPolicy />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+              <main className="flex-1 flex flex-col">
+                <Header />
+                <div className="flex-1">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/text-encryption" element={<TextEncryption />} />
+                    <Route path="/audio-encryption" element={<AudioEncryption />} />
+                    <Route path="/help" element={<Help />} />
+                    <Route path="/image-encryption" element={<ImageEncryption />} />
+                    <Route path="/video-encryption" element={<VideoEncryption />} />
+                    <Route path="/password-generator" element={<PasswordGenerator />} />
+                    <Route path="/share" element={<ShareApp />} />
+                    <Route path="/privacy" element={<PrivacyPolicy />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<SignUp />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
               </main>
             </div>
           </SidebarProvider>
