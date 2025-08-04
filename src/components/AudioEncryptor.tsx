@@ -109,7 +109,7 @@ const AudioEncryptor: React.FC = () => {
 
   // فك تشفير الصوت
   const handleDecrypt = async () => {
-    if (!encryptedAudio) {
+    if (!encryptedAudio.trim()) {
       toast.error(isArabic ? "لا يوجد صوت مشفر" : "No encrypted audio available");
       return;
     }
@@ -119,9 +119,15 @@ const AudioEncryptor: React.FC = () => {
     }
     try {
       const plainBase64 = decryptAES(encryptedAudio, password);
-      if (!plainBase64) throw new Error();
-      const u8arr = base64ToUint8Array(plainBase64);
-      const blob = new Blob([u8arr], { type: "audio/webm" });
+      if (!plainBase64) throw new Error("Decryption failed");
+      
+      // Convert base64 back to blob
+      const binaryString = atob(plainBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: "audio/webm" });
       setDecryptedAudioURL(URL.createObjectURL(blob));
       toast.success(isArabic ? "تم فك التشفير!" : "Audio decrypted!");
     } catch {

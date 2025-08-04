@@ -1,4 +1,3 @@
-
 import CryptoJS from 'crypto-js';
 
 // AES Encryption
@@ -122,5 +121,57 @@ export const clearMemory = (variable: any): void => {
         delete variable[key];
       }
     }
+  }
+};
+
+// File encryption utilities
+export const encryptFile = async (file: File, password: string): Promise<string> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    return encryptAES(base64Data, password);
+  } catch (error) {
+    console.error('File encryption error:', error);
+    throw new Error('Failed to encrypt file');
+  }
+};
+
+export const decryptFile = (encryptedData: string, password: string, originalFileName: string): Blob => {
+  try {
+    const decryptedBase64 = decryptAES(encryptedData, password);
+    const binaryString = atob(decryptedBase64);
+    const bytes = new Uint8Array(binaryString.length);
+    
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    // Determine MIME type based on file extension
+    const extension = originalFileName.split('.').pop()?.toLowerCase();
+    let mimeType = 'application/octet-stream';
+    
+    if (extension) {
+      const mimeTypes: { [key: string]: string } = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+        'mp4': 'video/mp4',
+        'webm': 'video/webm',
+        'avi': 'video/avi',
+        'mov': 'video/quicktime',
+        'mp3': 'audio/mpeg',
+        'wav': 'audio/wav',
+        'ogg': 'audio/ogg',
+        'm4a': 'audio/mp4'
+      };
+      mimeType = mimeTypes[extension] || mimeType;
+    }
+    
+    return new Blob([bytes], { type: mimeType });
+  } catch (error) {
+    console.error('File decryption error:', error);
+    throw new Error('Failed to decrypt file. Check your password.');
   }
 };

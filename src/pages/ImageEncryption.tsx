@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Download, Lock, Unlock, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { encryptFile, decryptFile } from "@/utils/encryption";
 
 interface Texts {
   title: string;
@@ -16,6 +17,7 @@ interface Texts {
   encryptTab: string;
   decryptTab: string;
   selectImage: string;
+  selectEncryptedFile: string;
   password: string;
   passwordPlaceholder: string;
   encryptButton: string;
@@ -28,6 +30,10 @@ interface Texts {
   decryptionSuccess: string;
   encryptionError: string;
   decryptionError: string;
+  processing: string;
+  pasteEncryptedData: string;
+  encryptedDataPlaceholder: string;
+  fileName: string;
 }
 
 const englishTexts: Texts = {
@@ -36,18 +42,23 @@ const englishTexts: Texts = {
   encryptTab: "Encrypt Image",
   decryptTab: "Decrypt Image",
   selectImage: "Select Image",
+  selectEncryptedFile: "Select Encrypted File or Paste Data",
   password: "Password",
   passwordPlaceholder: "Enter password for encryption/decryption",
   encryptButton: "Encrypt Image",
   decryptButton: "Decrypt Image",
-  downloadEncrypted: "Download Encrypted Image",
+  downloadEncrypted: "Download Encrypted Data",
   downloadDecrypted: "Download Decrypted Image",
   selectImageFirst: "Please select an image first",
   passwordRequired: "Password is required",
   encryptionSuccess: "Image encrypted successfully!",
   decryptionSuccess: "Image decrypted successfully!",
   encryptionError: "Failed to encrypt image",
-  decryptionError: "Failed to decrypt image"
+  decryptionError: "Failed to decrypt image",
+  processing: "Processing...",
+  pasteEncryptedData: "Or paste encrypted data:",
+  encryptedDataPlaceholder: "Paste encrypted image data here...",
+  fileName: "Original file name:"
 };
 
 const arabicTexts: Texts = {
@@ -56,18 +67,23 @@ const arabicTexts: Texts = {
   encryptTab: "تشفير الصورة",
   decryptTab: "فك التشفير",
   selectImage: "اختر صورة",
+  selectEncryptedFile: "اختر ملف مشفر أو الصق البيانات",
   password: "كلمة المرور",
   passwordPlaceholder: "أدخل كلمة المرور للتشفير/فك التشفير",
   encryptButton: "تشفير الصورة",
   decryptButton: "فك تشفير الصورة",
-  downloadEncrypted: "تحميل الصورة المشفرة",
+  downloadEncrypted: "تحميل البيانات المشفرة",
   downloadDecrypted: "تحميل الصورة المفكوكة",
   selectImageFirst: "يرجى اختيار صورة أولاً",
   passwordRequired: "كلمة المرور مطلوبة",
   encryptionSuccess: "تم تشفير الصورة بنجاح!",
   decryptionSuccess: "تم فك تشفير الصورة بنجاح!",
   encryptionError: "فشل في تشفير الصورة",
-  decryptionError: "فشل في فك تشفير الصورة"
+  decryptionError: "فشل في فك تشفير الصورة",
+  processing: "جاري المعالجة...",
+  pasteEncryptedData: "أو الصق البيانات المشفرة:",
+  encryptedDataPlaceholder: "الصق بيانات الصورة المشفرة هنا...",
+  fileName: "اسم الملف الأصلي:"
 };
 
 const ImageEncryption = () => {
@@ -76,17 +92,33 @@ const ImageEncryption = () => {
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [password, setPassword] = useState("");
-  const [processedImage, setProcessedImage] = useState<string | null>(null);
+  const [encryptedData, setEncryptedData] = useState("");
+  const [encryptedDataInput, setEncryptedDataInput] = useState("");
+  const [decryptedImageUrl, setDecryptedImageUrl] = useState<string | null>(null);
+  const [originalFileName, setOriginalFileName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("encrypt");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const encryptedFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setSelectedFile(file);
-      setProcessedImage(null);
+      setOriginalFileName(file.name);
+    }
+  };
+
+  const handleEncryptedFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setEncryptedDataInput(content);
+      };
+      reader.readAsText(file);
     }
   };
 
@@ -94,10 +126,13 @@ const ImageEncryption = () => {
     setActiveTab(value);
     setSelectedFile(null);
     setPassword("");
-    setProcessedImage(null);
+    setEncryptedData("");
+    setEncryptedDataInput("");
+    setDecryptedImageUrl(null);
+    setOriginalFileName("");
   };
 
-  const processImage = async (encrypt: boolean) => {
+  const encryptImage = async () => {
     if (!selectedFile) {
       toast.error(texts.selectImageFirst);
       return;
@@ -111,45 +146,63 @@ const ImageEncryption = () => {
     setIsProcessing(true);
     
     try {
-      // Convert image to base64
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64Data = reader.result as string;
-        
-        // For now, we'll just simulate encryption by encoding/decoding the base64
-        // In a real implementation, you'd use proper encryption on the image data
-        if (encrypt) {
-          // Simulate encryption by reversing the base64 string (placeholder)
-          const encryptedData = btoa(base64Data.split('').reverse().join(''));
-          setProcessedImage(`data:application/octet-stream;base64,${encryptedData}`);
-          toast.success(texts.encryptionSuccess);
-        } else {
-          try {
-            // Simulate decryption by reversing the process
-            const decryptedData = atob(base64Data.replace(/^data:.*,/, ''));
-            const originalData = decryptedData.split('').reverse().join('');
-            setProcessedImage(originalData);
-            toast.success(texts.decryptionSuccess);
-          } catch {
-            toast.error(texts.decryptionError);
-          }
-        }
-      };
-      
-      reader.readAsDataURL(selectedFile);
+      const encrypted = await encryptFile(selectedFile, password);
+      setEncryptedData(encrypted);
+      toast.success(texts.encryptionSuccess);
     } catch (error) {
-      toast.error(encrypt ? texts.encryptionError : texts.decryptionError);
+      console.error('Encryption error:', error);
+      toast.error(texts.encryptionError);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const downloadResult = () => {
-    if (!processedImage) return;
+  const decryptImage = async () => {
+    const dataToDecrypt = encryptedDataInput.trim();
+    
+    if (!dataToDecrypt) {
+      toast.error("Please select an encrypted file or paste encrypted data");
+      return;
+    }
+    
+    if (!password.trim()) {
+      toast.error(texts.passwordRequired);
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    try {
+      const decryptedBlob = decryptFile(dataToDecrypt, password, originalFileName || "decrypted_image.png");
+      const url = URL.createObjectURL(decryptedBlob);
+      setDecryptedImageUrl(url);
+      toast.success(texts.decryptionSuccess);
+    } catch (error) {
+      console.error('Decryption error:', error);
+      toast.error(texts.decryptionError);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const downloadEncryptedData = () => {
+    if (!encryptedData) return;
+    
+    const blob = new Blob([encryptedData], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${originalFileName || 'image'}_encrypted.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadDecryptedImage = () => {
+    if (!decryptedImageUrl) return;
     
     const link = document.createElement('a');
-    link.href = processedImage;
-    link.download = activeTab === "encrypt" ? "encrypted_image.enc" : "decrypted_image.png";
+    link.href = decryptedImageUrl;
+    link.download = originalFileName || 'decrypted_image.png';
     link.click();
   };
 
@@ -191,6 +244,11 @@ const ImageEncryption = () => {
                         ref={fileInputRef}
                         className="mt-2"
                       />
+                      {selectedFile && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                        </p>
+                      )}
                     </div>
                     
                     <div>
@@ -206,24 +264,67 @@ const ImageEncryption = () => {
                     </div>
                     
                     <Button 
-                      onClick={() => processImage(true)}
-                      disabled={isProcessing}
+                      onClick={encryptImage}
+                      disabled={isProcessing || !selectedFile || !password}
                       className="w-full"
                     >
                       <Lock className="h-4 w-4 mr-2" />
-                      {isProcessing ? "..." : texts.encryptButton}
+                      {isProcessing ? texts.processing : texts.encryptButton}
                     </Button>
+
+                    {encryptedData && (
+                      <div className="mt-6 p-4 bg-muted rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">{texts.downloadEncrypted}</span>
+                          <Button onClick={downloadEncryptedData} variant="outline" size="sm">
+                            <Download className="h-4 w-4 mr-2" />
+                            {isArabic ? "تحميل" : "Download"}
+                          </Button>
+                        </div>
+                        <textarea 
+                          className="w-full h-20 p-2 text-xs bg-background border rounded resize-none"
+                          value={encryptedData}
+                          readOnly
+                          placeholder="Encrypted data will appear here..."
+                        />
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 
                 <TabsContent value="decrypt" className="space-y-6">
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="encrypted-upload">{texts.selectImage}</Label>
+                      <Label htmlFor="encrypted-upload">{texts.selectEncryptedFile}</Label>
                       <Input
                         id="encrypted-upload"
                         type="file"
-                        onChange={handleFileSelect}
+                        accept=".txt"
+                        onChange={handleEncryptedFileSelect}
+                        ref={encryptedFileInputRef}
+                        className="mt-2"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="encrypted-data">{texts.pasteEncryptedData}</Label>
+                      <textarea
+                        id="encrypted-data"
+                        value={encryptedDataInput}
+                        onChange={(e) => setEncryptedDataInput(e.target.value)}
+                        placeholder={texts.encryptedDataPlaceholder}
+                        className="w-full h-32 p-3 text-sm border rounded-lg resize-none mt-2"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="original-filename">{texts.fileName}</Label>
+                      <Input
+                        id="original-filename"
+                        type="text"
+                        value={originalFileName}
+                        onChange={(e) => setOriginalFileName(e.target.value)}
+                        placeholder="image.jpg"
                         className="mt-2"
                       />
                     </div>
@@ -241,30 +342,35 @@ const ImageEncryption = () => {
                     </div>
                     
                     <Button 
-                      onClick={() => processImage(false)}
-                      disabled={isProcessing}
+                      onClick={decryptImage}
+                      disabled={isProcessing || !encryptedDataInput || !password}
                       className="w-full"
                     >
                       <Unlock className="h-4 w-4 mr-2" />
-                      {isProcessing ? "..." : texts.decryptButton}
+                      {isProcessing ? texts.processing : texts.decryptButton}
                     </Button>
+
+                    {decryptedImageUrl && (
+                      <div className="mt-6 p-4 bg-muted rounded-lg">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="font-medium">{texts.downloadDecrypted}</span>
+                          <Button onClick={downloadDecryptedImage} variant="outline" size="sm">
+                            <Download className="h-4 w-4 mr-2" />
+                            {isArabic ? "تحميل" : "Download"}
+                          </Button>
+                        </div>
+                        <div className="flex justify-center">
+                          <img 
+                            src={decryptedImageUrl} 
+                            alt="Decrypted" 
+                            className="max-w-full max-h-64 object-contain rounded-lg border"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
-
-              {processedImage && (
-                <div className="mt-6 p-4 bg-muted rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">
-                      {activeTab === "encrypt" ? texts.downloadEncrypted : texts.downloadDecrypted}
-                    </span>
-                    <Button onClick={downloadResult} variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      تحميل
-                    </Button>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

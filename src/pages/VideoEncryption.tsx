@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Download, Lock, Unlock, VideoIcon } from "lucide-react";
 import { toast } from "sonner";
+import { encryptFile, decryptFile } from "@/utils/encryption";
 
 interface Texts {
   title: string;
@@ -16,6 +17,7 @@ interface Texts {
   encryptTab: string;
   decryptTab: string;
   selectVideo: string;
+  selectEncryptedFile: string;
   password: string;
   passwordPlaceholder: string;
   encryptButton: string;
@@ -30,6 +32,9 @@ interface Texts {
   decryptionError: string;
   processing: string;
   fileSizeWarning: string;
+  pasteEncryptedData: string;
+  encryptedDataPlaceholder: string;
+  fileName: string;
 }
 
 const englishTexts: Texts = {
@@ -38,11 +43,12 @@ const englishTexts: Texts = {
   encryptTab: "Encrypt Video",
   decryptTab: "Decrypt Video",
   selectVideo: "Select Video",
+  selectEncryptedFile: "Select Encrypted File or Paste Data",
   password: "Password",
   passwordPlaceholder: "Enter password for encryption/decryption",
   encryptButton: "Encrypt Video",
   decryptButton: "Decrypt Video",
-  downloadEncrypted: "Download Encrypted Video",
+  downloadEncrypted: "Download Encrypted Data",
   downloadDecrypted: "Download Decrypted Video",
   selectVideoFirst: "Please select a video first",
   passwordRequired: "Password is required",
@@ -51,7 +57,10 @@ const englishTexts: Texts = {
   encryptionError: "Failed to encrypt video",
   decryptionError: "Failed to decrypt video",
   processing: "Processing...",
-  fileSizeWarning: "Large files may take longer to process"
+  fileSizeWarning: "Large files may take longer to process",
+  pasteEncryptedData: "Or paste encrypted data:",
+  encryptedDataPlaceholder: "Paste encrypted video data here...",
+  fileName: "Original file name:"
 };
 
 const arabicTexts: Texts = {
@@ -60,11 +69,12 @@ const arabicTexts: Texts = {
   encryptTab: "تشفير الفيديو",
   decryptTab: "فك التشفير",
   selectVideo: "اختر فيديو",
+  selectEncryptedFile: "اختر ملف مشفر أو الصق البيانات",
   password: "كلمة المرور",
   passwordPlaceholder: "أدخل كلمة المرور للتشفير/فك التشفير",
   encryptButton: "تشفير الفيديو",
   decryptButton: "فك تشفير الفيديو",
-  downloadEncrypted: "تحميل الفيديو المشفر",
+  downloadEncrypted: "تحميل البيانات المشفرة",
   downloadDecrypted: "تحميل الفيديو المفكوك",
   selectVideoFirst: "يرجى اختيار فيديو أولاً",
   passwordRequired: "كلمة المرور مطلوبة",
@@ -73,7 +83,10 @@ const arabicTexts: Texts = {
   encryptionError: "فشل في تشفير الفيديو",
   decryptionError: "فشل في فك تشفير الفيديو",
   processing: "جاري المعالجة...",
-  fileSizeWarning: "الملفات الكبيرة قد تستغرق وقتاً أطول للمعالجة"
+  fileSizeWarning: "الملفات الكبيرة قد تستغرق وقتاً أطول للمعالجة",
+  pasteEncryptedData: "أو الصق البيانات المشفرة:",
+  encryptedDataPlaceholder: "الصق بيانات الفيديو المشفرة هنا...",
+  fileName: "اسم الملف الأصلي:"
 };
 
 const VideoEncryption = () => {
@@ -82,18 +95,22 @@ const VideoEncryption = () => {
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [password, setPassword] = useState("");
-  const [processedVideo, setProcessedVideo] = useState<string | null>(null);
+  const [encryptedData, setEncryptedData] = useState("");
+  const [encryptedDataInput, setEncryptedDataInput] = useState("");
+  const [decryptedVideoUrl, setDecryptedVideoUrl] = useState<string | null>(null);
+  const [originalFileName, setOriginalFileName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState("encrypt");
   const [processingProgress, setProcessingProgress] = useState(0);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const encryptedFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
       setSelectedFile(file);
-      setProcessedVideo(null);
+      setOriginalFileName(file.name);
       
       // Show warning for large files
       if (file.size > 50 * 1024 * 1024) { // 50MB
@@ -102,15 +119,30 @@ const VideoEncryption = () => {
     }
   };
 
+  const handleEncryptedFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setEncryptedDataInput(content);
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setSelectedFile(null);
     setPassword("");
-    setProcessedVideo(null);
+    setEncryptedData("");
+    setEncryptedDataInput("");
+    setDecryptedVideoUrl(null);
+    setOriginalFileName("");
     setProcessingProgress(0);
   };
 
-  const processVideo = async (encrypt: boolean) => {
+  const encryptVideo = async () => {
     if (!selectedFile) {
       toast.error(texts.selectVideoFirst);
       return;
@@ -136,57 +168,81 @@ const VideoEncryption = () => {
         });
       }, 500);
 
-      // Convert video to array buffer for processing
-      const arrayBuffer = await selectedFile.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      
-      if (encrypt) {
-        // Simulate encryption by XOR with password hash (placeholder)
-        const passwordBytes = new TextEncoder().encode(password);
-        const encryptedArray = new Uint8Array(uint8Array.length);
-        
-        for (let i = 0; i < uint8Array.length; i++) {
-          encryptedArray[i] = uint8Array[i] ^ passwordBytes[i % passwordBytes.length];
-        }
-        
-        const blob = new Blob([encryptedArray], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        setProcessedVideo(url);
-        toast.success(texts.encryptionSuccess);
-      } else {
-        try {
-          // Simulate decryption by reversing XOR
-          const passwordBytes = new TextEncoder().encode(password);
-          const decryptedArray = new Uint8Array(uint8Array.length);
-          
-          for (let i = 0; i < uint8Array.length; i++) {
-            decryptedArray[i] = uint8Array[i] ^ passwordBytes[i % passwordBytes.length];
-          }
-          
-          const blob = new Blob([decryptedArray], { type: selectedFile.type });
-          const url = URL.createObjectURL(blob);
-          setProcessedVideo(url);
-          toast.success(texts.decryptionSuccess);
-        } catch {
-          toast.error(texts.decryptionError);
-        }
-      }
+      const encrypted = await encryptFile(selectedFile, password);
+      setEncryptedData(encrypted);
       
       clearInterval(progressInterval);
       setProcessingProgress(100);
+      toast.success(texts.encryptionSuccess);
     } catch (error) {
-      toast.error(encrypt ? texts.encryptionError : texts.decryptionError);
+      console.error('Encryption error:', error);
+      toast.error(texts.encryptionError);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const downloadResult = () => {
-    if (!processedVideo) return;
+  const decryptVideo = async () => {
+    const dataToDecrypt = encryptedDataInput.trim();
+    
+    if (!dataToDecrypt) {
+      toast.error("Please select an encrypted file or paste encrypted data");
+      return;
+    }
+    
+    if (!password.trim()) {
+      toast.error(texts.passwordRequired);
+      return;
+    }
+
+    setIsProcessing(true);
+    setProcessingProgress(0);
+    
+    try {
+      // Simulate processing progress
+      const progressInterval = setInterval(() => {
+        setProcessingProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 500);
+
+      const decryptedBlob = decryptFile(dataToDecrypt, password, originalFileName || "decrypted_video.mp4");
+      const url = URL.createObjectURL(decryptedBlob);
+      setDecryptedVideoUrl(url);
+      
+      clearInterval(progressInterval);
+      setProcessingProgress(100);
+      toast.success(texts.decryptionSuccess);
+    } catch (error) {
+      console.error('Decryption error:', error);
+      toast.error(texts.decryptionError);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const downloadEncryptedData = () => {
+    if (!encryptedData) return;
+    
+    const blob = new Blob([encryptedData], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${originalFileName || 'video'}_encrypted.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadDecryptedVideo = () => {
+    if (!decryptedVideoUrl) return;
     
     const link = document.createElement('a');
-    link.href = processedVideo;
-    link.download = activeTab === "encrypt" ? "encrypted_video.enc" : `decrypted_video.${selectedFile?.name.split('.').pop()}`;
+    link.href = decryptedVideoUrl;
+    link.download = originalFileName || 'decrypted_video.mp4';
     link.click();
   };
 
@@ -248,31 +304,69 @@ const VideoEncryption = () => {
                     </div>
                     
                     <Button 
-                      onClick={() => processVideo(true)}
-                      disabled={isProcessing}
+                      onClick={encryptVideo}
+                      disabled={isProcessing || !selectedFile || !password}
                       className="w-full"
                     >
                       <Lock className="h-4 w-4 mr-2" />
                       {isProcessing ? `${texts.processing} ${processingProgress}%` : texts.encryptButton}
                     </Button>
+
+                    {encryptedData && !isProcessing && (
+                      <div className="mt-6 p-4 bg-muted rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">{texts.downloadEncrypted}</span>
+                          <Button onClick={downloadEncryptedData} variant="outline" size="sm">
+                            <Download className="h-4 w-4 mr-2" />
+                            {isArabic ? "تحميل" : "Download"}
+                          </Button>
+                        </div>
+                        <textarea 
+                          className="w-full h-20 p-2 text-xs bg-background border rounded resize-none"
+                          value={encryptedData.substring(0, 200) + "..."}
+                          readOnly
+                          placeholder="Encrypted data will appear here..."
+                        />
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 
                 <TabsContent value="decrypt" className="space-y-6">
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="encrypted-upload">{texts.selectVideo}</Label>
+                      <Label htmlFor="encrypted-upload">{texts.selectEncryptedFile}</Label>
                       <Input
                         id="encrypted-upload"
                         type="file"
-                        onChange={handleFileSelect}
+                        accept=".txt"
+                        onChange={handleEncryptedFileSelect}
+                        ref={encryptedFileInputRef}
                         className="mt-2"
                       />
-                      {selectedFile && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                        </p>
-                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="encrypted-data">{texts.pasteEncryptedData}</Label>
+                      <textarea
+                        id="encrypted-data"
+                        value={encryptedDataInput}
+                        onChange={(e) => setEncryptedDataInput(e.target.value)}
+                        placeholder={texts.encryptedDataPlaceholder}
+                        className="w-full h-32 p-3 text-sm border rounded-lg resize-none mt-2"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="original-filename">{texts.fileName}</Label>
+                      <Input
+                        id="original-filename"
+                        type="text"
+                        value={originalFileName}
+                        onChange={(e) => setOriginalFileName(e.target.value)}
+                        placeholder="video.mp4"
+                        className="mt-2"
+                      />
                     </div>
                     
                     <div>
@@ -288,13 +382,34 @@ const VideoEncryption = () => {
                     </div>
                     
                     <Button 
-                      onClick={() => processVideo(false)}
-                      disabled={isProcessing}
+                      onClick={decryptVideo}
+                      disabled={isProcessing || !encryptedDataInput || !password}
                       className="w-full"
                     >
                       <Unlock className="h-4 w-4 mr-2" />
                       {isProcessing ? `${texts.processing} ${processingProgress}%` : texts.decryptButton}
                     </Button>
+
+                    {decryptedVideoUrl && !isProcessing && (
+                      <div className="mt-6 p-4 bg-muted rounded-lg">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="font-medium">{texts.downloadDecrypted}</span>
+                          <Button onClick={downloadDecryptedVideo} variant="outline" size="sm">
+                            <Download className="h-4 w-4 mr-2" />
+                            {isArabic ? "تحميل" : "Download"}
+                          </Button>
+                        </div>
+                        <div className="flex justify-center">
+                          <video 
+                            src={decryptedVideoUrl} 
+                            controls 
+                            className="max-w-full max-h-64 rounded-lg border"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
@@ -312,20 +427,6 @@ const VideoEncryption = () => {
                         style={{ width: `${processingProgress}%` }}
                       />
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {processedVideo && !isProcessing && (
-                <div className="mt-6 p-4 bg-muted rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">
-                      {activeTab === "encrypt" ? texts.downloadEncrypted : texts.downloadDecrypted}
-                    </span>
-                    <Button onClick={downloadResult} variant="outline" size="sm">
-                      <Download className="h-4 w-4 mr-2" />
-                      تحميل
-                    </Button>
                   </div>
                 </div>
               )}
