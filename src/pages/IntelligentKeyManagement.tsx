@@ -757,7 +757,7 @@ const IntelligentKeyManagement = () => {
                             onClick={() => handleRefreshKey(key.id)}
                             disabled={!getGeminiApiKey()}
                           >
-                            <Refresh className="h-3 w-3" />
+                            <RefreshCw className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
