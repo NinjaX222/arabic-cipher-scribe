@@ -6,10 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Copy, KeyRound, Lock, LockOpen, RefreshCcw, Trash, Upload, Brain, Sparkles } from "lucide-react";
+import { Copy, KeyRound, Lock, LockOpen, RefreshCcw, Trash } from "lucide-react";
 import { useCipher } from "@/contexts/CipherContext";
 import { encryptAES, decryptAES, doubleEncrypt, doubleDecrypt } from "@/utils/encryption";
-import { geminiService } from "@/utils/gemini";
 import { toast } from "sonner";
 
 interface TabText {
@@ -90,14 +89,6 @@ const EncryptionForm: React.FC = () => {
   const [encryptionType, setEncryptionType] = useState<"simple" | "double">("simple");
   const [expiration, setExpiration] = useState("24");
   const [usePassword, setUsePassword] = useState(true);
-  
-  // Multimodal encryption states
-  const [useMultimodal, setUseMultimodal] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [uploadedAudio, setUploadedAudio] = useState<File | null>(null);
-  const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
-  const [generatedKey, setGeneratedKey] = useState("");
-  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
   const handleModeChange = (newMode: "encrypt" | "decrypt") => {
     setMode(newMode);
@@ -160,58 +151,6 @@ const EncryptionForm: React.FC = () => {
     setPassword("");
     setSecondPassword("");
     setResult("");
-    setUploadedImage(null);
-    setUploadedAudio(null);
-    setUploadedVideo(null);
-    setGeneratedKey("");
-  };
-
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        const base64Data = base64.split(',')[1];
-        resolve(base64Data);
-      };
-      reader.onerror = error => reject(error);
-    });
-  };
-
-  const handleGenerateMultimodalKey = async () => {
-    if (!input.trim() && !uploadedImage && !uploadedAudio && !uploadedVideo) {
-      toast.error(isArabic ? "يرجى إدخال نص أو رفع ملف" : "Please enter text or upload a file");
-      return;
-    }
-
-    setIsGeneratingKey(true);
-    try {
-      const data: any = {
-        text: input || undefined
-      };
-
-      if (uploadedImage) {
-        data.imageBase64 = await convertFileToBase64(uploadedImage);
-      }
-      if (uploadedAudio) {
-        data.audioData = await convertFileToBase64(uploadedAudio);
-      }
-      if (uploadedVideo) {
-        data.videoData = await convertFileToBase64(uploadedVideo);
-      }
-
-      const key = await geminiService.generateMultimodalKey(data);
-      setGeneratedKey(key);
-      setPassword(key);
-      
-      toast.success(isArabic ? "تم توليد مفتاح ذكي!" : "Smart key generated!");
-    } catch (error) {
-      console.error("Error generating key:", error);
-      toast.error(isArabic ? "فشل في توليد المفتاح" : "Failed to generate key");
-    } finally {
-      setIsGeneratingKey(false);
-    }
   };
 
   const handleCopy = () => {
@@ -266,86 +205,6 @@ const EncryptionForm: React.FC = () => {
               />
               <Label htmlFor="usePassword">{text.usePassword}</Label>
             </div>
-
-            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-              <Switch
-                id="useMultimodal"
-                checked={useMultimodal}
-                onCheckedChange={setUseMultimodal}
-              />
-              <Label htmlFor="useMultimodal" className="flex items-center gap-2">
-                <Brain className="h-4 w-4 text-purple-600" />
-                {isArabic ? "تشفير ذكي متعدد الأنماط" : "Smart Multimodal Encryption"}
-              </Label>
-            </div>
-
-            {useMultimodal && (
-              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>{isArabic ? "صورة" : "Image"}</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setUploadedImage(e.target.files?.[0] || null)}
-                        className="text-sm"
-                      />
-                      {uploadedImage && <Sparkles className="h-4 w-4 text-green-600" />}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>{isArabic ? "صوت" : "Audio"}</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="file"
-                        accept="audio/*"
-                        onChange={(e) => setUploadedAudio(e.target.files?.[0] || null)}
-                        className="text-sm"
-                      />
-                      {uploadedAudio && <Sparkles className="h-4 w-4 text-green-600" />}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>{isArabic ? "فيديو" : "Video"}</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => setUploadedVideo(e.target.files?.[0] || null)}
-                        className="text-sm"
-                      />
-                      {uploadedVideo && <Sparkles className="h-4 w-4 text-green-600" />}
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleGenerateMultimodalKey}
-                  disabled={isGeneratingKey}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                >
-                  <Brain className="h-4 w-4 mr-2" />
-                  {isGeneratingKey 
-                    ? (isArabic ? "جاري توليد المفتاح..." : "Generating Key...")
-                    : (isArabic ? "توليد مفتاح ذكي" : "Generate Smart Key")
-                  }
-                </Button>
-
-                {generatedKey && (
-                  <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <Label className="text-green-700 dark:text-green-300 text-sm font-medium">
-                      {isArabic ? "المفتاح المولد:" : "Generated Key:"}
-                    </Label>
-                    <p className="text-xs text-green-600 dark:text-green-400 font-mono break-all mt-1">
-                      {generatedKey}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
             
             {usePassword && (
               <>

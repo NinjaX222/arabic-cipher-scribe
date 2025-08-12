@@ -45,6 +45,7 @@ const IntelligentKeyManagement = () => {
   const { toast } = useToast();
 
   // State management
+  const [apiKey, setApiKeyState] = useState(getGeminiApiKey() || "");
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   
@@ -179,6 +180,22 @@ const IntelligentKeyManagement = () => {
     localStorage.setItem('intelligent_keys', JSON.stringify(intelligentKeys));
   }, [intelligentKeys]);
 
+  const handleSaveApiKey = () => {
+    if (!apiKey.trim()) {
+      toast({
+        title: text.error,
+        description: text.apiKeyRequired,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setGeminiApiKey(apiKey);
+    toast({
+      title: text.success,
+      description: text.apiKeyRequired,
+    });
+  };
 
   const getComplexityLevel = (key: string): 'low' | 'medium' | 'high' | 'ultra' => {
     const hasNumbers = /\d/.test(key);
@@ -414,6 +431,7 @@ const IntelligentKeyManagement = () => {
 
   return (
     <div className="min-h-screen">
+      <Header />
       <div className="container px-4 py-8">
         <div className={`mb-8 ${isArabic ? "rtl font-arabic" : ""}`}>
           <div className="flex items-center gap-3 mb-4">
@@ -457,6 +475,29 @@ const IntelligentKeyManagement = () => {
         </div>
 
         <div className="max-w-6xl mx-auto space-y-6">
+          {/* API Key Setup */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-emerald-600" />
+                {text.apiKeyLabel}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  placeholder={text.apiKeyPlaceholder}
+                  value={apiKey}
+                  onChange={(e) => setApiKeyState(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={handleSaveApiKey} disabled={!apiKey.trim()}>
+                  {text.saveKey}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* File Encryption Section */}

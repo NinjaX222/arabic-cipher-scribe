@@ -236,22 +236,19 @@ export class GeminiService {
   }
 }
 
-// Service instance and API key management
+// Export singleton instance
 export const geminiService = new GeminiService();
 
-// Initialize with fixed API key
-const GEMINI_API_KEY = "AIzaSyB924JT6nqf2-hydRENzekRxPTSlvX3r8E";
-geminiService.initialize(GEMINI_API_KEY);
-
+// Helper to store API key temporarily in session
 export const setGeminiApiKey = (apiKey: string) => {
-  // Keep for compatibility but use fixed key
-  geminiService.initialize(GEMINI_API_KEY);
+  sessionStorage.setItem('gemini_api_key', apiKey);
+  geminiService.initialize(apiKey);
 };
 
-export const getGeminiApiKey = (): string => {
-  return GEMINI_API_KEY;
+export const getGeminiApiKey = (): string | null => {
+  return sessionStorage.getItem('gemini_api_key');
 };
 
 export const clearGeminiApiKey = () => {
-  // Keep for compatibility
+  sessionStorage.removeItem('gemini_api_key');
 };
