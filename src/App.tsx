@@ -19,9 +19,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
-import MultimodalEncryption from "./pages/MultimodalEncryption";
-import IntelligentKeyManagement from "./pages/IntelligentKeyManagement";
-import SecurityAnalysis from "./pages/SecurityAnalysis";
+import FileEncryption from "./pages/FileEncryption";
 
 // Add support for crypto-js
 declare global {
@@ -57,9 +55,7 @@ const App = () => (
                     <Route path="/privacy" element={<PrivacyPolicy />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<SignUp />} />
-                    <Route path="/multimodal-encryption" element={<MultimodalEncryption />} />
-                    <Route path="/intelligent-keys" element={<IntelligentKeyManagement />} />
-                    <Route path="/security-analysis" element={<SecurityAnalysis />} />
+                    <Route path="/file-encryption" element={<FileEncryption />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

@@ -12,7 +12,8 @@ import {
   ChevronDown,
   ChevronRight,
   LockIcon,
-  Mic
+  Mic,
+  FileText
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
@@ -81,9 +82,7 @@ export function AppSidebar() {
     { title: isArabic ? "تشفير الصوت" : "Audio Encryption", url: "/audio-encryption", icon: Mic },
     { title: text.imageEncryption, url: "/image-encryption", icon: ImageIcon },
     { title: text.videoEncryption, url: "/video-encryption", icon: VideoIcon },
-    { title: isArabic ? "التشفير متعدد الأنماط" : "Multimodal Encryption", url: "/multimodal-encryption", icon: Shield },
-    { title: isArabic ? "إدارة المفاتيح الذكية" : "Intelligent Keys", url: "/intelligent-keys", icon: KeyRound },
-    { title: isArabic ? "تحليل الأمان" : "Security Analysis", url: "/security-analysis", icon: Shield },
+    { title: isArabic ? "تشفير الملفات" : "File Encryption", url: "/file-encryption", icon: FileText },
     { title: text.passwordGenerator, url: "/password-generator", icon: KeyRound },
     { title: text.shareApp, url: "/share", icon: Share2 },
   ];

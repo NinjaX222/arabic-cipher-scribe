@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
+import { authService } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const SignUp = () => {
   const { isArabic } = useCipher();
@@ -59,10 +61,34 @@ const SignUp = () => {
     confirmPasswordPlaceholder: "Confirm your password"
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Backend implementation will be added here
-    console.log("Sign up attempt:", formData);
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast.error(isArabic ? "كلمات المرور غير متطابقة" : "Passwords do not match");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const result = await authService.signUp(formData.name, formData.email, formData.password);
+      if (result.success) {
+        toast.success(isArabic ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
+        // Redirect to login
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1000);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error(isArabic ? "خطأ في إنشاء الحساب" : "Registration error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -196,10 +222,10 @@ const SignUp = () => {
             <CardFooter className="flex flex-col space-y-4">
               <Button 
                 type="submit" 
-                className="w-full"
-                disabled={!formData.acceptTerms}
+                className="w-full" 
+                disabled={!formData.acceptTerms || isLoading}
               >
-                {text.signUpButton}
+                {isLoading ? (isArabic ? "جاري إنشاء الحساب..." : "Creating account...") : text.signUpButton}
               </Button>
               
               <div className="text-center text-sm">

@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
+import { authService } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const Login = () => {
   const { isArabic } = useCipher();
@@ -38,10 +40,28 @@ const Login = () => {
     passwordPlaceholder: "Enter your password"
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Backend implementation will be added here
-    console.log("Login attempt:", { email, password });
+    setIsLoading(true);
+    
+    try {
+      const result = await authService.signIn(email, password);
+      if (result.success) {
+        toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
+        // Redirect to dashboard or home
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error(isArabic ? "خطأ في تسجيل الدخول" : "Login error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -113,8 +133,8 @@ const Login = () => {
             </CardContent>
             
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full">
-                {text.loginButton}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (isArabic ? "جاري تسجيل الدخول..." : "Signing in...") : text.loginButton}
               </Button>
               
               <div className="text-center text-sm">
