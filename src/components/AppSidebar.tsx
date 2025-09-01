@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Home, 
   ImageIcon, 
@@ -13,10 +13,13 @@ import {
   ChevronRight,
   LockIcon,
   Mic,
-  FileText
+  FileText,
+  Settings,
+  User
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
+import { authService } from "@/lib/supabase";
 
 import {
   Sidebar,
@@ -42,6 +45,11 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const [isToolsOpen, setIsToolsOpen] = useState(true);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    setCurrentUser(authService.getCurrentUser());
+  }, []);
 
   const text = isArabic ? {
     home: "الرئيسية",
@@ -53,6 +61,8 @@ export function AppSidebar() {
     account: "الحساب",
     login: "تسجيل الدخول",
     signUp: "إنشاء حساب",
+    settings: "الإعدادات",
+    profile: "الملف الشخصي",
     help: "المساعدة",
     privacy: "سياسة الخصوصية"
   } : {
@@ -65,6 +75,8 @@ export function AppSidebar() {
     account: "Account",
     login: "Login",
     signUp: "Sign Up",
+    settings: "Settings",
+    profile: "Profile",
     help: "Help",
     privacy: "Privacy Policy"
   };
@@ -87,7 +99,10 @@ export function AppSidebar() {
     { title: text.shareApp, url: "/share", icon: Share2 },
   ];
 
-  const accountItems = [
+  const accountItems = currentUser ? [
+    { title: text.profile, url: "/profile", icon: User },
+    { title: text.settings, url: "/settings", icon: Settings },
+  ] : [
     { title: text.login, url: "/login", icon: LogIn },
     { title: text.signUp, url: "/signup", icon: UserPlus },
   ];

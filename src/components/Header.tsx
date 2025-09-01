@@ -1,39 +1,52 @@
-import { Globe2, Moon, Sun, BookOpen, Menu, ImageIcon, VideoIcon, KeyRound, Share2, Shield } from "lucide-react";
+import { BookOpen, Menu, ImageIcon, VideoIcon, KeyRound, Share2, Shield, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCipher } from "@/contexts/CipherContext";
 import { Link } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { authService } from "@/lib/supabase";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface HeaderTexts {
   title: string;
-  toggleLanguage: string;
-  toggleDarkMode: string;
   help: string;
+  signOut: string;
+  profile: string;
+  settings: string;
 }
 
 const englishText: HeaderTexts = {
   title: "Cipher Guard",
-  toggleLanguage: "Switch to Arabic",
-  toggleDarkMode: "Toggle dark mode",
-  help: "Help & Guide"
+  help: "Help & Guide",
+  signOut: "Sign Out",
+  profile: "Profile", 
+  settings: "Settings"
 };
 
 const arabicText: HeaderTexts = {
   title: "حارس التشفير",
-  toggleLanguage: "التبديل إلى الإنجليزية",
-  toggleDarkMode: "تبديل الوضع المظلم",
-  help: "المساعدة والدليل"
+  help: "المساعدة والدليل",
+  signOut: "تسجيل الخروج",
+  profile: "الملف الشخصي",
+  settings: "الإعدادات"
 };
 
 const Header = () => {
-  const {
-    isArabic,
-    toggleLanguage,
-    isDarkMode,
-    toggleDarkMode
-  } = useCipher();
+  const { isArabic } = useCipher();
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const text = isArabic ? arabicText : englishText;
+
+  useEffect(() => {
+    setCurrentUser(authService.getCurrentUser());
+  }, []);
+
+  const handleSignOut = async () => {
+    await authService.signOut();
+    setCurrentUser(null);
+    toast.success(isArabic ? "تم تسجيل الخروج بنجاح" : "Signed out successfully");
+  };
 
   return (
     <header className={`w-full px-3 md:px-6 py-3 md:py-4 bg-background border-b ${isArabic ? "rtl font-arabic" : ""}`}>
@@ -141,26 +154,50 @@ const Header = () => {
                   {text.help}
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={toggleLanguage} className="flex items-center gap-2">
-                <Globe2 className="h-4 w-4" />
-                {text.toggleLanguage}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={toggleDarkMode} className="flex items-center gap-2">
-                {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                {text.toggleDarkMode}
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          {/* Desktop Language and Theme Toggle */}
-          <Button variant="ghost" size="sm" className="h-8 w-8 md:h-10 md:w-10 hidden sm:block" onClick={toggleLanguage} title={text.toggleLanguage}>
-            <Globe2 className="h-4 w-4 md:h-5 md:w-5" />
-          </Button>
-          
-          <Button variant="ghost" size="sm" className="h-8 w-8 md:h-10 md:w-10 hidden sm:block" onClick={toggleDarkMode} title={text.toggleDarkMode}>
-            {isDarkMode ? <Sun className="h-4 w-4 md:h-5 md:w-5" /> : <Moon className="h-4 w-4 md:h-5 md:w-5" />}
-          </Button>
+
+          {/* User Profile or Login Button */}
+          {currentUser ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" />
+                    <AvatarFallback>{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">{currentUser.name}</p>
+                    <p className="w-[200px] truncate text-sm text-muted-foreground">
+                      {currentUser.email}
+                    </p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {text.settings}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 text-red-600">
+                  <LogOut className="h-4 w-4" />
+                  {text.signOut}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/login">
+              <Button variant="outline" size="sm">
+                {isArabic ? "تسجيل الدخول" : "Login"}
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

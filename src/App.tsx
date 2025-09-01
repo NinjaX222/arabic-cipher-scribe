@@ -18,6 +18,7 @@ import ShareApp from "./pages/ShareApp";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import FileEncryption from "./pages/FileEncryption";
 
@@ -55,6 +56,7 @@ const App = () => (
                     <Route path="/privacy" element={<PrivacyPolicy />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<SignUp />} />
+                    <Route path="/settings" element={<Settings />} />
                     <Route path="/file-encryption" element={<FileEncryption />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
