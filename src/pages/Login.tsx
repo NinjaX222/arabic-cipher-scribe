@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,21 @@ import { toast } from "sonner";
 
 const Login = () => {
   const { isArabic } = useCipher();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkAuth = async () => {
+      const session = await authService.getSession();
+      if (session) {
+        navigate("/");
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const text = isArabic ? {
     title: "تسجيل الدخول",
@@ -44,23 +56,23 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    try {
-      const result = await authService.signIn(email, password);
-      if (result.success) {
-        toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
-        // Redirect to dashboard or home
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      toast.error(isArabic ? "خطأ في تسجيل الدخول" : "Login error");
-    } finally {
-      setIsLoading(false);
+    if (!email || !password) {
+      toast.error(isArabic ? "الرجاء إدخال البريد الإلكتروني وكلمة المرور" : "Please enter email and password");
+      return;
+    }
+
+    setIsLoading(true);
+
+    const result = await authService.signIn(email, password);
+    
+    setIsLoading(false);
+
+    if (result.success) {
+      toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
+      navigate("/");
+    } else {
+      toast.error(result.message);
     }
   };
 

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 const SignUp = () => {
   const { isArabic } = useCipher();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,6 +23,17 @@ const SignUp = () => {
     confirmPassword: "",
     acceptTerms: false
   });
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkAuth = async () => {
+      const session = await authService.getSession();
+      if (session) {
+        navigate("/");
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   const text = isArabic ? {
     title: "إنشاء حساب جديد",
@@ -65,29 +77,33 @@ const SignUp = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+      toast.error(isArabic ? "الرجاء ملء جميع الحقول" : "Please fill all fields");
+      return;
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast.error(isArabic ? "كلمات المرور غير متطابقة" : "Passwords do not match");
       return;
     }
+
+    if (formData.password.length < 6) {
+      toast.error(isArabic ? "كلمة المرور يجب أن تكون 6 أحرف على الأقل" : "Password must be at least 6 characters");
+      return;
+    }
     
     setIsLoading(true);
+
+    const result = await authService.signUp(formData.name, formData.email, formData.password);
     
-    try {
-      const result = await authService.signUp(formData.name, formData.email, formData.password);
-      if (result.success) {
-        toast.success(isArabic ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
-        // Redirect to login
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 1000);
-      } else {
-        toast.error(result.message);
-      }
-    } catch (error) {
-      toast.error(isArabic ? "خطأ في إنشاء الحساب" : "Registration error");
-    } finally {
-      setIsLoading(false);
+    setIsLoading(false);
+
+    if (result.success) {
+      toast.success(isArabic ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
+      navigate("/");
+    } else {
+      toast.error(result.message);
     }
   };
 

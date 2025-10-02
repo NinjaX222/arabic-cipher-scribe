@@ -1,52 +1,64 @@
-// Demo authentication functions using localStorage
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
 export const authService = {
   async signIn(email: string, password: string) {
-    // Simulate API call
-    return new Promise<{ success: boolean; message: string }>((resolve) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('users') || '[]')
-        const user = users.find((u: any) => u.email === email && u.password === password)
-        
-        if (user) {
-          localStorage.setItem('currentUser', JSON.stringify({ email: user.email, name: user.name }))
-          resolve({ success: true, message: 'Login successful' })
-        } else {
-          resolve({ success: false, message: 'Invalid email or password' })
-        }
-      }, 1000)
-    })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, message: 'تم تسجيل الدخول بنجاح', data };
   },
 
   async signUp(name: string, email: string, password: string) {
-    // Simulate API call
-    return new Promise<{ success: boolean; message: string }>((resolve) => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('users') || '[]')
-        const existingUser = users.find((u: any) => u.email === email)
-        
-        if (existingUser) {
-          resolve({ success: false, message: 'User already exists' })
-        } else {
-          const newUser = { name, email, password, id: Date.now() }
-          users.push(newUser)
-          localStorage.setItem('users', JSON.stringify(users))
-          resolve({ success: true, message: 'Registration successful' })
-        }
-      }, 1000)
-    })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name: name,
+        },
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, message: 'تم إنشاء الحساب بنجاح', data };
   },
 
   async signOut() {
-    localStorage.removeItem('currentUser')
-    return { success: true, message: 'Logged out successfully' }
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, message: 'تم تسجيل الخروج بنجاح' };
   },
 
-  getCurrentUser() {
-    const user = localStorage.getItem('currentUser')
-    return user ? JSON.parse(user) : null
+  getCurrentUser: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
   },
 
-  isAuthenticated() {
-    return !!localStorage.getItem('currentUser')
+  getSession: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
+  },
+
+  onAuthStateChange: (callback: (event: string, session: any) => void) => {
+    return supabase.auth.onAuthStateChange(callback);
   }
-}
+};

@@ -2,11 +2,18 @@ import { BookOpen, Menu, ImageIcon, VideoIcon, KeyRound, Share2, Shield, User, L
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCipher } from "@/contexts/CipherContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { authService } from "@/lib/supabase";
+import { authService, supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+
+interface Profile {
+  id: string;
+  name: string | null;
+  email: string;
+  avatar_url: string | null;
+}
 
 interface HeaderTexts {
   title: string;
@@ -34,18 +41,66 @@ const arabicText: HeaderTexts = {
 
 const Header = () => {
   const { isArabic } = useCipher();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const text = isArabic ? arabicText : englishText;
 
   useEffect(() => {
-    setCurrentUser(authService.getCurrentUser());
+    // Check current session
+    const checkAuth = async () => {
+      const session = await authService.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        // Fetch profile data
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (data) {
+          setProfile(data);
+        }
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        // Fetch profile when user logs in
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (data) {
+          setProfile(data);
+        }
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSignOut = async () => {
-    await authService.signOut();
-    setCurrentUser(null);
-    toast.success(isArabic ? "تم تسجيل الخروج بنجاح" : "Signed out successfully");
+    const result = await authService.signOut();
+    if (result.success) {
+      setUser(null);
+      setProfile(null);
+      toast.success(isArabic ? "تم تسجيل الخروج بنجاح" : "Signed out successfully");
+      navigate("/login");
+    }
   };
 
   return (
@@ -158,22 +213,24 @@ const Header = () => {
           </DropdownMenu>
 
           {/* User Profile or Login Button */}
-          {currentUser ? (
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="" />
-                    <AvatarFallback>{currentUser.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || "User"} />
+                    <AvatarFallback>
+                      {profile?.name ? profile.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">{currentUser.name}</p>
+                    <p className="font-medium">{profile?.name || (isArabic ? "مستخدم" : "User")}</p>
                     <p className="w-[200px] truncate text-sm text-muted-foreground">
-                      {currentUser.email}
+                      {profile?.email}
                     </p>
                   </div>
                 </div>
