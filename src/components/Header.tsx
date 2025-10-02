@@ -58,7 +58,7 @@ const Header = () => {
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
         
         if (data) {
           setProfile(data);
@@ -77,7 +77,7 @@ const Header = () => {
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
         
         if (data) {
           setProfile(data);
@@ -235,6 +235,12 @@ const Header = () => {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {isArabic ? "الملف الشخصي" : "Profile"}
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/settings" className="flex items-center gap-2">
                     <User className="h-4 w-4" />

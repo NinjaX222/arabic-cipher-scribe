@@ -1,13 +1,36 @@
-import { Globe2, Moon, Sun, User, Bell, Shield, Palette } from "lucide-react";
+import { Globe2, Moon, Sun, User, Bell, Shield, Palette, Lock, Mail, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { authService } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const Settings = () => {
   const { isArabic, toggleLanguage, isDarkMode, toggleDarkMode } = useCipher();
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
+  const [notifications, setNotifications] = useState({
+    email: true,
+    push: false,
+    encryption: true,
+    security: true
+  });
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const session = await authService.getSession();
+    if (session?.user) {
+      setUser(session.user);
+    }
+  };
 
   const text = isArabic ? {
     title: "الإعدادات",
@@ -24,10 +47,19 @@ const Settings = () => {
     lightMode: "الوضع الفاتح",
     profile: "الملف الشخصي",
     profileDesc: "إعدادات الحساب والملف الشخصي",
+    viewProfile: "عرض الملف الشخصي",
     notifications: "الإشعارات",
     notificationsDesc: "إدارة تفضيلات الإشعارات",
+    emailNotif: "إشعارات البريد الإلكتروني",
+    pushNotif: "الإشعارات الفورية",
+    encryptionNotif: "إشعارات التشفير",
+    securityNotif: "إشعارات الأمان",
     security: "الأمان",
-    securityDesc: "إعدادات الأمان والخصوصية"
+    securityDesc: "إعدادات الأمان والخصوصية",
+    changePassword: "تغيير كلمة المرور",
+    twoFactor: "المصادقة الثنائية",
+    twoFactorDesc: "إضافة طبقة أمان إضافية",
+    loginRequired: "يجب تسجيل الدخول أولاً"
   } : {
     title: "Settings",
     description: "Manage your application preferences",
@@ -43,10 +75,19 @@ const Settings = () => {
     lightMode: "Light Mode",
     profile: "Profile",
     profileDesc: "Account and profile settings",
+    viewProfile: "View Profile",
     notifications: "Notifications", 
     notificationsDesc: "Manage your notification preferences",
+    emailNotif: "Email Notifications",
+    pushNotif: "Push Notifications",
+    encryptionNotif: "Encryption Notifications",
+    securityNotif: "Security Alerts",
     security: "Security",
-    securityDesc: "Security and privacy settings"
+    securityDesc: "Security and privacy settings",
+    changePassword: "Change Password",
+    twoFactor: "Two-Factor Authentication",
+    twoFactorDesc: "Add an extra layer of security",
+    loginRequired: "Please login first"
   };
 
   return (
@@ -113,7 +154,16 @@ const Settings = () => {
               <CardDescription>{text.profileDesc}</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">{isArabic ? "قريباً..." : "Coming soon..."}</p>
+              {user ? (
+                <Button onClick={() => navigate("/profile")} className="w-full">
+                  {text.viewProfile}
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                  <p>{text.loginRequired}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -126,8 +176,76 @@ const Settings = () => {
               </div>
               <CardDescription>{text.notificationsDesc}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">{isArabic ? "قريباً..." : "Coming soon..."}</p>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <label className="text-sm font-medium">{text.emailNotif}</label>
+                  </div>
+                </div>
+                <Switch 
+                  checked={notifications.email} 
+                  onCheckedChange={(checked) => {
+                    setNotifications({...notifications, email: checked});
+                    toast.success(isArabic ? "تم تحديث الإعدادات" : "Settings updated");
+                  }} 
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Bell className="h-4 w-4" />
+                    <label className="text-sm font-medium">{text.pushNotif}</label>
+                  </div>
+                </div>
+                <Switch 
+                  checked={notifications.push} 
+                  onCheckedChange={(checked) => {
+                    setNotifications({...notifications, push: checked});
+                    toast.success(isArabic ? "تم تحديث الإعدادات" : "Settings updated");
+                  }} 
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    <label className="text-sm font-medium">{text.encryptionNotif}</label>
+                  </div>
+                </div>
+                <Switch 
+                  checked={notifications.encryption} 
+                  onCheckedChange={(checked) => {
+                    setNotifications({...notifications, encryption: checked});
+                    toast.success(isArabic ? "تم تحديث الإعدادات" : "Settings updated");
+                  }} 
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    <label className="text-sm font-medium">{text.securityNotif}</label>
+                  </div>
+                </div>
+                <Switch 
+                  checked={notifications.security} 
+                  onCheckedChange={(checked) => {
+                    setNotifications({...notifications, security: checked});
+                    toast.success(isArabic ? "تم تحديث الإعدادات" : "Settings updated");
+                  }} 
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -140,8 +258,47 @@ const Settings = () => {
               </div>
               <CardDescription>{text.securityDesc}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">{isArabic ? "قريباً..." : "Coming soon..."}</p>
+            <CardContent className="space-y-4">
+              {user ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        <label className="text-sm font-medium">{text.changePassword}</label>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => toast.info(isArabic ? "قريباً..." : "Coming soon...")}
+                    >
+                      {isArabic ? "تغيير" : "Change"}
+                    </Button>
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        <label className="text-sm font-medium">{text.twoFactor}</label>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{text.twoFactorDesc}</p>
+                    </div>
+                    <Switch 
+                      defaultChecked={false}
+                      onCheckedChange={() => toast.info(isArabic ? "قريباً..." : "Coming soon...")}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <AlertCircle className="h-4 w-4" />
+                  <p>{text.loginRequired}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
