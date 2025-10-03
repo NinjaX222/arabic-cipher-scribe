@@ -1,4 +1,4 @@
-import { BookOpen, Menu, ImageIcon, VideoIcon, KeyRound, Share2, Shield, User, LogOut } from "lucide-react";
+import { BookOpen, Menu, ImageIcon, VideoIcon, KeyRound, Share2, Shield, User, LogOut, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCipher } from "@/contexts/CipherContext";
@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { authService, supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface Profile {
   id: string;
@@ -44,6 +45,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const { isAdmin } = useUserRole();
 
   const text = isArabic ? arabicText : englishText;
 
@@ -247,6 +249,17 @@ const Header = () => {
                     {text.settings}
                   </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        {isArabic ? "لوحة التحكم" : "Admin Panel"}
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-2 text-red-600">
                   <LogOut className="h-4 w-4" />
