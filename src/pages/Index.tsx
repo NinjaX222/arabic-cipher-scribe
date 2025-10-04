@@ -4,13 +4,15 @@ import { useCipher } from "@/contexts/CipherContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LockIcon, KeyRound, Mic, ImageIcon, VideoIcon, Share2 } from "lucide-react";
 import Header from "@/components/Header";
+import { useAppSettings } from "@/hooks/useAppSettings";
 
 const Index = () => {
   const { isArabic } = useCipher();
+  const { settings } = useAppSettings();
   
   const text = isArabic ? {
-    title: "مشفر النصوص",
-    subtitle: "منصة شاملة لتشفير وحماية بياناتك بأمان",
+    title: settings?.app_name?.ar || "مشفر النصوص",
+    subtitle: settings?.app_tagline?.ar || "منصة شاملة لتشفير وحماية بياناتك بأمان",
     textEncryption: "تشفير النصوص",
     textDescription: "قم بتشفير وفك تشفير الرسائل النصية بأمان",
     audioEncryption: "تشفير الصوت", 
@@ -24,8 +26,8 @@ const Index = () => {
     shareApp: "مشاركة التطبيق",
     shareDescription: "شارك التطبيق مع الأصدقاء والعائلة"
   } : {
-    title: "Cipher Scribe",
-    subtitle: "Complete platform for encrypting and securing your data safely",
+    title: settings?.app_name?.en || "Cipher Scribe",
+    subtitle: settings?.app_tagline?.en || "Complete platform for encrypting and securing your data safely",
     textEncryption: "Text Encryption",
     textDescription: "Encrypt and decrypt text messages securely",
     audioEncryption: "Audio Encryption",

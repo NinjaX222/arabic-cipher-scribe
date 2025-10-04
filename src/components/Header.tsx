@@ -8,6 +8,7 @@ import { authService, supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAppSettings } from "@/hooks/useAppSettings";
 
 interface Profile {
   id: string;
@@ -46,8 +47,10 @@ const Header = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const { isAdmin } = useUserRole();
+  const { settings } = useAppSettings();
 
   const text = isArabic ? arabicText : englishText;
+  const appName = settings?.app_name ? (isArabic ? settings.app_name.ar : settings.app_name.en) : text.title;
 
   useEffect(() => {
     // Check current session
@@ -119,7 +122,7 @@ const Header = () => {
           </div>
           <div className="flex flex-col">
             <h1 className="text-base md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent group-hover:from-purple-600 group-hover:to-cyan-600 transition-all duration-300">
-              {text.title}
+              {appName}
             </h1>
             <div className="text-xs text-muted-foreground font-medium hidden sm:block">
               {isArabic ? "حماية متقدمة" : "Advanced Security"}

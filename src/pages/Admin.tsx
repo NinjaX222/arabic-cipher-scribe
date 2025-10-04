@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, Users, Database, Settings, Lock } from "lucide-react";
+import { Shield, Users, Database, Settings, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
 import { supabase } from "@/lib/supabase";
@@ -26,6 +28,17 @@ const Admin = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Settings state
+  const [appNameAr, setAppNameAr] = useState("");
+  const [appNameEn, setAppNameEn] = useState("");
+  const [taglineAr, setTaglineAr] = useState("");
+  const [taglineEn, setTaglineEn] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("");
+  const [secondaryColor, setSecondaryColor] = useState("");
+  const [accentColor, setAccentColor] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const text = isArabic ? {
     title: "لوحة تحكم المسؤول",
@@ -52,7 +65,28 @@ const Admin = () => {
     settingsDesc: "إعدادات النظام",
     settingsMsg: "إعدادات النظام العامة",
     securityDesc: "إعدادات الأمان",
-    securityMsg: "مراقبة الأمان والتحكم بالصلاحيات"
+    securityMsg: "مراقبة الأمان والتحكم بالصلاحيات",
+    appName: "اسم التطبيق",
+    appNameAr: "اسم التطبيق (عربي)",
+    appNameEn: "اسم التطبيق (English)",
+    tagline: "الشعار",
+    taglineAr: "الشعار (عربي)",
+    taglineEn: "الشعار (English)",
+    colors: "الألوان",
+    primaryColor: "اللون الأساسي",
+    secondaryColor: "اللون الثانوي",
+    accentColor: "لون التمييز",
+    images: "الصور",
+    logo: "الشعار",
+    heroImage: "صورة البانر",
+    save: "حفظ التغييرات",
+    colorHelper: "استخدم صيغة HSL (مثال: 221.2 83.2% 53.3%)",
+    appNameDesc: "اسم التطبيق الذي يظهر في الصفحة الرئيسية",
+    taglineDesc: "الشعار الذي يظهر تحت اسم التطبيق",
+    imagesDesc: "رفع الشعار وصورة البانر",
+    settingsSaved: "تم حفظ الإعدادات بنجاح",
+    uploadSuccess: "تم رفع الصورة بنجاح",
+    uploadError: "فشل رفع الصورة"
   } : {
     title: "Admin Dashboard",
     subtitle: "System and user management",
@@ -78,7 +112,28 @@ const Admin = () => {
     settingsDesc: "System settings",
     settingsMsg: "General system settings",
     securityDesc: "Security settings",
-    securityMsg: "Security monitoring and access control"
+    securityMsg: "Security monitoring and access control",
+    appName: "App Name",
+    appNameAr: "App Name (Arabic)",
+    appNameEn: "App Name (English)",
+    tagline: "Tagline",
+    taglineAr: "Tagline (Arabic)",
+    taglineEn: "Tagline (English)",
+    colors: "Colors",
+    primaryColor: "Primary Color",
+    secondaryColor: "Secondary Color",
+    accentColor: "Accent Color",
+    images: "Images",
+    logo: "Logo",
+    heroImage: "Hero Image",
+    save: "Save Changes",
+    colorHelper: "Use HSL format (example: 221.2 83.2% 53.3%)",
+    appNameDesc: "App name shown on the homepage",
+    taglineDesc: "Tagline shown under the app name",
+    imagesDesc: "Upload logo and hero image",
+    settingsSaved: "Settings saved successfully",
+    uploadSuccess: "Image uploaded successfully",
+    uploadError: "Failed to upload image"
   };
 
   useEffect(() => {
@@ -111,10 +166,45 @@ const Admin = () => {
 
       setIsAdmin(true);
       fetchUsers();
+      fetchSettings();
     } catch (error) {
       console.error('Error checking admin access:', error);
       toast.error(text.error);
       navigate("/");
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('key, value');
+
+      if (error) throw error;
+
+      data?.forEach(item => {
+        switch (item.key) {
+          case 'app_name':
+            setAppNameAr(item.value.ar || '');
+            setAppNameEn(item.value.en || '');
+            break;
+          case 'app_tagline':
+            setTaglineAr(item.value.ar || '');
+            setTaglineEn(item.value.en || '');
+            break;
+          case 'primary_color':
+            setPrimaryColor(item.value || '');
+            break;
+          case 'secondary_color':
+            setSecondaryColor(item.value || '');
+            break;
+          case 'accent_color':
+            setAccentColor(item.value || '');
+            break;
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching settings:', error);
     }
   };
 
@@ -173,6 +263,68 @@ const Admin = () => {
     } catch (error) {
       console.error('Error updating role:', error);
       toast.error(text.error);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      setSavingSettings(true);
+      const updates = [
+        { key: 'app_name', value: { ar: appNameAr, en: appNameEn } },
+        { key: 'app_tagline', value: { ar: taglineAr, en: taglineEn } },
+        { key: 'primary_color', value: primaryColor },
+        { key: 'secondary_color', value: secondaryColor },
+        { key: 'accent_color', value: accentColor }
+      ];
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('app_settings')
+          .update({ value: update.value })
+          .eq('key', update.key);
+
+        if (error) throw error;
+      }
+
+      toast.success(text.settingsSaved);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast.error(text.error);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleImageUpload = async (file: File, type: 'logo' | 'hero') => {
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${type}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('app-assets')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('app-assets')
+        .getPublicUrl(fileName);
+
+      const key = type === 'logo' ? 'logo_url' : 'hero_image_url';
+      
+      const { error: settingsError } = await supabase
+        .from('app_settings')
+        .upsert({ key, value: publicUrl });
+
+      if (settingsError) throw settingsError;
+
+      toast.success(text.uploadSuccess);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error(text.uploadError);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -300,15 +452,138 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>{text.settingsTab}</CardTitle>
-                <CardDescription>{text.settingsDesc}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{text.settingsMsg}</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{text.appName}</CardTitle>
+                  <CardDescription>{text.appNameDesc}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>{text.appNameAr}</Label>
+                    <Input
+                      value={appNameAr}
+                      onChange={(e) => setAppNameAr(e.target.value)}
+                      className={isArabic ? "font-arabic text-right" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label>{text.appNameEn}</Label>
+                    <Input
+                      value={appNameEn}
+                      onChange={(e) => setAppNameEn(e.target.value)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>{text.tagline}</CardTitle>
+                  <CardDescription>{text.taglineDesc}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>{text.taglineAr}</Label>
+                    <Input
+                      value={taglineAr}
+                      onChange={(e) => setTaglineAr(e.target.value)}
+                      className={isArabic ? "font-arabic text-right" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label>{text.taglineEn}</Label>
+                    <Input
+                      value={taglineEn}
+                      onChange={(e) => setTaglineEn(e.target.value)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>{text.colors}</CardTitle>
+                  <CardDescription>{text.colorHelper}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>{text.primaryColor}</Label>
+                    <Input
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      placeholder="221.2 83.2% 53.3%"
+                    />
+                  </div>
+                  <div>
+                    <Label>{text.secondaryColor}</Label>
+                    <Input
+                      value={secondaryColor}
+                      onChange={(e) => setSecondaryColor(e.target.value)}
+                      placeholder="217.2 91.2% 59.8%"
+                    />
+                  </div>
+                  <div>
+                    <Label>{text.accentColor}</Label>
+                    <Input
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      placeholder="210 40% 96.1%"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>{text.images}</CardTitle>
+                  <CardDescription>{text.imagesDesc}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>{text.logo}</Label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(file, 'logo');
+                      }}
+                      disabled={uploading}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label>{text.heroImage}</Label>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(file, 'hero');
+                      }}
+                      disabled={uploading}
+                      className="mt-2"
+                    />
+                  </div>
+                  {uploading && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {isArabic ? "جاري الرفع..." : "Uploading..."}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Button 
+                onClick={handleSaveSettings}
+                disabled={savingSettings}
+                className="w-full"
+              >
+                {savingSettings && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {text.save}
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="security" className="mt-6">
