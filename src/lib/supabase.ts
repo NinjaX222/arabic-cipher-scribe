@@ -30,6 +30,8 @@ export const authService = {
   },
 
   async signUp(name: string, email: string, password: string) {
+    const redirectUrl = `${window.location.origin}/`;
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -37,7 +39,7 @@ export const authService = {
         data: {
           name: name,
         },
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: redirectUrl,
       },
     });
 

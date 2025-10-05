@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, Users, Database, Settings, Lock, Loader2 } from "lucide-react";
+import { Shield, Users, Database, Settings, Lock, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,10 +51,12 @@ const Admin = () => {
     name: "الاسم",
     role: "الدور",
     createdAt: "تاريخ التسجيل",
+    actions: "الإجراءات",
     admin: "مسؤول",
     moderator: "مشرف",
     user: "مستخدم",
     changeRole: "تغيير الدور",
+    deleteUser: "حذف",
     unauthorized: "غير مصرح لك بالوصول",
     loading: "جاري التحميل...",
     noUsers: "لا يوجد مستخدمون",
@@ -98,10 +100,12 @@ const Admin = () => {
     name: "Name",
     role: "Role",
     createdAt: "Created At",
+    actions: "Actions",
     admin: "Admin",
     moderator: "Moderator",
     user: "User",
     changeRole: "Change Role",
+    deleteUser: "Delete",
     unauthorized: "Unauthorized access",
     loading: "Loading...",
     noUsers: "No users found",
@@ -247,11 +251,13 @@ const Admin = () => {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
+      // First, delete existing role
       await supabase
         .from('user_roles')
         .delete()
         .eq('user_id', userId);
 
+      // Then insert the new role
       const { error } = await supabase
         .from('user_roles')
         .insert({ user_id: userId, role: newRole });
@@ -262,6 +268,34 @@ const Admin = () => {
       fetchUsers();
     } catch (error) {
       console.error('Error updating role:', error);
+      toast.error(text.error);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm(isArabic ? 'هل أنت متأكد من حذف هذا المستخدم؟' : 'Are you sure you want to delete this user?')) {
+      return;
+    }
+
+    try {
+      // Delete user role first
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      // Delete user profile
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast.success(isArabic ? 'تم حذف المستخدم بنجاح' : 'User deleted successfully');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
       toast.error(text.error);
     }
   };
@@ -399,6 +433,7 @@ const Admin = () => {
                           <TableHead>{text.role}</TableHead>
                           <TableHead>{text.createdAt}</TableHead>
                           <TableHead>{text.changeRole}</TableHead>
+                          <TableHead>{text.actions}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -428,6 +463,15 @@ const Admin = () => {
                                   <SelectItem value="user">{text.user}</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                {text.deleteUser}
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
