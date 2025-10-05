@@ -15,7 +15,10 @@ import {
   Mic,
   FileText,
   Settings,
-  User
+  User,
+  BarChart3,
+  History,
+  HardDrive
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
@@ -64,7 +67,10 @@ export function AppSidebar() {
     settings: "الإعدادات",
     profile: "الملف الشخصي",
     help: "المساعدة",
-    privacy: "سياسة الخصوصية"
+    privacy: "سياسة الخصوصية",
+    statistics: "الإحصائيات",
+    activityLog: "سجل الأنشطة",
+    backups: "النسخ الاحتياطية"
   } : {
     home: "Home",
     tools: "Encryption Tools",
@@ -78,7 +84,10 @@ export function AppSidebar() {
     settings: "Settings",
     profile: "Profile",
     help: "Help",
-    privacy: "Privacy Policy"
+    privacy: "Privacy Policy",
+    statistics: "Statistics",
+    activityLog: "Activity Log",
+    backups: "Backups"
   };
 
   const isActive = (path: string) => currentPath === path;
@@ -102,6 +111,9 @@ export function AppSidebar() {
   const accountItems = currentUser ? [
     { title: text.profile, url: "/profile", icon: User },
     { title: text.settings, url: "/settings", icon: Settings },
+    { title: text.statistics, url: "/statistics", icon: BarChart3 },
+    { title: text.activityLog, url: "/activity-log", icon: History },
+    { title: text.backups, url: "/backups", icon: HardDrive },
   ] : [
     { title: text.login, url: "/login", icon: LogIn },
     { title: text.signUp, url: "/signup", icon: UserPlus },

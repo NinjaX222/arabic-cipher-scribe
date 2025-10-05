@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          resource_name: string | null
+          resource_type: string
+          status: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_name?: string | null
+          resource_type: string
+          status?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource_name?: string | null
+          resource_type?: string
+          status?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           id: string
@@ -35,6 +74,39 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      encryption_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          settings: Json
+          template_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          settings: Json
+          template_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          settings?: Json
+          template_name?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -65,6 +137,39 @@ export type Database = {
         }
         Relationships: []
       }
+      secure_backups: {
+        Row: {
+          backup_name: string
+          backup_type: string
+          created_at: string
+          encrypted_data: string
+          expires_at: string | null
+          id: string
+          size_bytes: number | null
+          user_id: string
+        }
+        Insert: {
+          backup_name: string
+          backup_type: string
+          created_at?: string
+          encrypted_data: string
+          expires_at?: string | null
+          id?: string
+          size_bytes?: number | null
+          user_id: string
+        }
+        Update: {
+          backup_name?: string
+          backup_type?: string
+          created_at?: string
+          encrypted_data?: string
+          expires_at?: string | null
+          id?: string
+          size_bytes?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -82,6 +187,51 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_statistics: {
+        Row: {
+          created_at: string
+          id: string
+          last_activity_at: string | null
+          total_audio_encrypted: number | null
+          total_decryptions: number | null
+          total_encryptions: number | null
+          total_files_encrypted: number | null
+          total_images_encrypted: number | null
+          total_keys_generated: number | null
+          total_video_encrypted: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_activity_at?: string | null
+          total_audio_encrypted?: number | null
+          total_decryptions?: number | null
+          total_encryptions?: number | null
+          total_files_encrypted?: number | null
+          total_images_encrypted?: number | null
+          total_keys_generated?: number | null
+          total_video_encrypted?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_activity_at?: string | null
+          total_audio_encrypted?: number | null
+          total_decryptions?: number | null
+          total_encryptions?: number | null
+          total_files_encrypted?: number | null
+          total_images_encrypted?: number | null
+          total_keys_generated?: number | null
+          total_video_encrypted?: number | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

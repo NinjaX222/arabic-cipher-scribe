@@ -23,6 +23,9 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import FileEncryption from "./pages/FileEncryption";
 import Admin from "./pages/Admin";
+import Statistics from "./pages/Statistics";
+import ActivityLog from "./pages/ActivityLog";
+import Backups from "./pages/Backups";
 
 // Add support for crypto-js
 declare global {
@@ -62,6 +65,9 @@ const App = () => (
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/file-encryption" element={<FileEncryption />} />
                     <Route path="/admin" element={<Admin />} />
+                    <Route path="/statistics" element={<Statistics />} />
+                    <Route path="/activity-log" element={<ActivityLog />} />
+                    <Route path="/backups" element={<Backups />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
