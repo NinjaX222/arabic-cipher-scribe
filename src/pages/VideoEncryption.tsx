@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Download, Lock, Unlock, VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 import { encryptFile, decryptFile } from "@/utils/encryption";
+import { logActivity } from "@/utils/activityLogger";
 
 interface Texts {
   title: string;
@@ -106,6 +107,14 @@ const VideoEncryption = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const encryptedFileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    logActivity({
+      actionType: 'encrypt',
+      resourceType: 'video',
+      resourceName: 'Video Encryption Page'
+    });
+  }, []);
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
@@ -173,9 +182,21 @@ const VideoEncryption = () => {
       
       clearInterval(progressInterval);
       setProcessingProgress(100);
+      await logActivity({
+        actionType: 'encrypt',
+        resourceType: 'video',
+        resourceName: selectedFile.name,
+        status: 'success'
+      });
       toast.success(texts.encryptionSuccess);
     } catch (error) {
       console.error('Encryption error:', error);
+      await logActivity({
+        actionType: 'encrypt',
+        resourceType: 'video',
+        resourceName: selectedFile?.name || 'Video',
+        status: 'failed'
+      });
       toast.error(texts.encryptionError);
     } finally {
       setIsProcessing(false);
@@ -216,9 +237,21 @@ const VideoEncryption = () => {
       
       clearInterval(progressInterval);
       setProcessingProgress(100);
+      await logActivity({
+        actionType: 'decrypt',
+        resourceType: 'video',
+        resourceName: originalFileName || 'Video',
+        status: 'success'
+      });
       toast.success(texts.decryptionSuccess);
     } catch (error) {
       console.error('Decryption error:', error);
+      await logActivity({
+        actionType: 'decrypt',
+        resourceType: 'video',
+        resourceName: originalFileName || 'Video',
+        status: 'failed'
+      });
       toast.error(texts.decryptionError);
     } finally {
       setIsProcessing(false);

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Download, Lock, Unlock, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { encryptFile, decryptFile } from "@/utils/encryption";
+import { logActivity } from "@/utils/activityLogger";
 
 interface Texts {
   title: string;
@@ -102,6 +103,14 @@ const ImageEncryption = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const encryptedFileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    logActivity({
+      actionType: 'encrypt',
+      resourceType: 'image',
+      resourceName: 'Image Encryption Page'
+    });
+  }, []);
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
@@ -148,8 +157,20 @@ const ImageEncryption = () => {
     try {
       const encrypted = await encryptFile(selectedFile, password);
       setEncryptedData(encrypted);
+      await logActivity({
+        actionType: 'encrypt',
+        resourceType: 'image',
+        resourceName: selectedFile.name,
+        status: 'success'
+      });
       toast.success(texts.encryptionSuccess);
     } catch (error) {
+      await logActivity({
+        actionType: 'encrypt',
+        resourceType: 'image',
+        resourceName: selectedFile.name,
+        status: 'failed'
+      });
       console.error('Encryption error:', error);
       toast.error(texts.encryptionError);
     } finally {
@@ -176,8 +197,20 @@ const ImageEncryption = () => {
       const decryptedBlob = decryptFile(dataToDecrypt, password, originalFileName || "decrypted_image.png");
       const url = URL.createObjectURL(decryptedBlob);
       setDecryptedImageUrl(url);
+      await logActivity({
+        actionType: 'decrypt',
+        resourceType: 'image',
+        resourceName: originalFileName || 'Image',
+        status: 'success'
+      });
       toast.success(texts.decryptionSuccess);
     } catch (error) {
+      await logActivity({
+        actionType: 'decrypt',
+        resourceType: 'image',
+        resourceName: originalFileName || 'Image',
+        status: 'failed'
+      });
       console.error('Decryption error:', error);
       toast.error(texts.decryptionError);
     } finally {

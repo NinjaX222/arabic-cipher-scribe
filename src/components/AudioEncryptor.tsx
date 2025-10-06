@@ -7,6 +7,7 @@ import { Mic, MicOff, Play, Pause } from "lucide-react";
 import { encryptAES, decryptAES } from "@/utils/encryption";
 import { toast } from "sonner";
 import { useCipher } from "@/contexts/CipherContext";
+import { logActivity } from "@/utils/activityLogger";
 
 function getIcon(name: string) {
   const icons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -104,6 +105,12 @@ const AudioEncryptor: React.FC = () => {
     const cipher = encryptAES(base64, password);
     setEncryptedAudio(cipher);
     setDecryptedAudioURL(null);
+    await logActivity({
+      actionType: 'encrypt',
+      resourceType: 'audio',
+      resourceName: 'Audio Recording',
+      status: 'success'
+    });
     toast.success(isArabic ? "تم التشفير!" : "Audio encrypted!");
   };
 
@@ -129,8 +136,20 @@ const AudioEncryptor: React.FC = () => {
       }
       const blob = new Blob([bytes], { type: "audio/webm" });
       setDecryptedAudioURL(URL.createObjectURL(blob));
+      await logActivity({
+        actionType: 'decrypt',
+        resourceType: 'audio',
+        resourceName: 'Audio Recording',
+        status: 'success'
+      });
       toast.success(isArabic ? "تم فك التشفير!" : "Audio decrypted!");
     } catch {
+      await logActivity({
+        actionType: 'decrypt',
+        resourceType: 'audio',
+        resourceName: 'Audio Recording',
+        status: 'failed'
+      });
       toast.error(isArabic ? "كلمة المرور أو المعطيات خاطئة" : "Wrong password or invalid data");
     }
   };

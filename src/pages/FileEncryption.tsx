@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FileText, Upload, Download, Lock, Unlock, Eye, EyeOff, Copy, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { useCipher } from "@/contexts/CipherContext";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import { encryptAES, decryptAES } from "@/utils/encryption";
+import { logActivity } from "@/utils/activityLogger";
 
 const FileEncryption = () => {
   const { isArabic } = useCipher();
@@ -25,6 +26,14 @@ const FileEncryption = () => {
   const [copied, setCopied] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    logActivity({
+      actionType: 'encrypt',
+      resourceType: 'file',
+      resourceName: 'File Encryption Page'
+    });
+  }, []);
 
   const text = isArabic ? {
     title: "تشفير الملفات",
@@ -143,12 +152,25 @@ const FileEncryption = () => {
       setProgress(100);
       setEncryptedData(encrypted);
       
+      await logActivity({
+        actionType: 'encrypt',
+        resourceType: 'file',
+        resourceName: selectedFiles.map(f => f.name).join(', '),
+        status: 'success'
+      });
+      
       setTimeout(() => {
         setIsProcessing(false);
         setProgress(0);
         toast.success(text.fileEncrypted);
       }, 500);
     } catch (error) {
+      await logActivity({
+        actionType: 'encrypt',
+        resourceType: 'file',
+        resourceName: selectedFiles.map(f => f.name).join(', '),
+        status: 'failed'
+      });
       setIsProcessing(false);
       setProgress(0);
       toast.error(isArabic ? "خطأ في التشفير" : "Encryption error");
@@ -177,12 +199,25 @@ const FileEncryption = () => {
       setProgress(100);
       setDecryptedFile({ name: fileInfo.name, data: fileInfo.data });
       
+      await logActivity({
+        actionType: 'decrypt',
+        resourceType: 'file',
+        resourceName: fileInfo.name || 'File',
+        status: 'success'
+      });
+      
       setTimeout(() => {
         setIsProcessing(false);
         setProgress(0);
         toast.success(text.fileDecrypted);
       }, 500);
     } catch (error) {
+      await logActivity({
+        actionType: 'decrypt',
+        resourceType: 'file',
+        resourceName: 'File',
+        status: 'failed'
+      });
       setIsProcessing(false);
       setProgress(0);
       toast.error(text.invalidData);

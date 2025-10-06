@@ -1,9 +1,19 @@
+import { useEffect } from "react";
 import AudioEncryptor from "@/components/AudioEncryptor";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
+import { logActivity } from "@/utils/activityLogger";
 
 const AudioEncryption = () => {
   const { isArabic } = useCipher();
+  
+  useEffect(() => {
+    logActivity({
+      actionType: 'encrypt',
+      resourceType: 'audio',
+      resourceName: 'Audio Encryption Page'
+    });
+  }, []);
   
   return (
     <div className="min-h-screen">

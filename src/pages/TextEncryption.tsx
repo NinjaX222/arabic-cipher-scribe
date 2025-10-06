@@ -1,10 +1,20 @@
+import { useEffect } from "react";
 import EncryptionForm from "@/components/EncryptionForm";
 import KeyManager from "@/components/KeyManager";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
+import { logActivity } from "@/utils/activityLogger";
 
 const TextEncryption = () => {
   const { isArabic } = useCipher();
+  
+  useEffect(() => {
+    logActivity({
+      actionType: 'encrypt',
+      resourceType: 'text',
+      resourceName: 'Text Encryption Page'
+    });
+  }, []);
   
   return (
     <div className="min-h-screen">

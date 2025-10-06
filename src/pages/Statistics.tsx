@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import { useCipher } from "@/contexts/CipherContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const Statistics = () => {
   const navigate = useNavigate();
@@ -201,6 +202,68 @@ const Statistics = () => {
                 </Card>
               ))}
             </div>
+
+            {/* Charts Section */}
+            {totalOperations > 0 && (
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Bar Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className={isArabic ? "rtl font-arabic" : ""}>
+                      {isArabic ? "نشاط التشفير" : "Encryption Activity"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={[
+                        { name: isArabic ? "ملفات" : "Files", value: stats.total_files_encrypted },
+                        { name: isArabic ? "صور" : "Images", value: stats.total_images_encrypted },
+                        { name: isArabic ? "صوت" : "Audio", value: stats.total_audio_encrypted },
+                        { name: isArabic ? "فيديو" : "Video", value: stats.total_video_encrypted },
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="value" fill="hsl(var(--primary))" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Pie Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className={isArabic ? "rtl font-arabic" : ""}>
+                      {isArabic ? "توزيع العمليات" : "Operations Distribution"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: text.totalEncryptions, value: stats.total_encryptions },
+                            { name: text.totalDecryptions, value: stats.total_decryptions },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="hsl(var(--primary))"
+                          dataKey="value"
+                        >
+                          <Cell fill="hsl(var(--primary))" />
+                          <Cell fill="hsl(var(--secondary))" />
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {totalOperations === 0 && (
               <Card>

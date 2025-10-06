@@ -10,6 +10,7 @@ import { Copy, KeyRound, Lock, LockOpen, RefreshCcw, Trash } from "lucide-react"
 import { useCipher } from "@/contexts/CipherContext";
 import { encryptAES, decryptAES, doubleEncrypt, doubleDecrypt } from "@/utils/encryption";
 import { toast } from "sonner";
+import { logActivity } from "@/utils/activityLogger";
 
 interface TabText {
   encrypt: string;
@@ -98,7 +99,7 @@ const EncryptionForm: React.FC = () => {
     setResult("");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     try {
       if (!input) {
         toast.error(isArabic ? "الرجاء إدخال نص" : "Please enter text");
@@ -125,6 +126,12 @@ const EncryptionForm: React.FC = () => {
         } else {
           setResult(doubleEncrypt(input, password, secondPassword));
         }
+        await logActivity({
+          actionType: 'encrypt',
+          resourceType: 'text',
+          resourceName: 'Text Message',
+          status: 'success'
+        });
         toast.success(
           isArabic ? "تم تشفير النص بنجاح" : "Text encrypted successfully"
         );
@@ -136,11 +143,23 @@ const EncryptionForm: React.FC = () => {
           const decrypted = doubleDecrypt(input, password, secondPassword);
           setResult(decrypted);
         }
+        await logActivity({
+          actionType: 'decrypt',
+          resourceType: 'text',
+          resourceName: 'Text Message',
+          status: 'success'
+        });
         toast.success(
           isArabic ? "تم فك تشفير النص بنجاح" : "Text decrypted successfully"
         );
       }
     } catch (error: any) {
+      await logActivity({
+        actionType: mode === "encrypt" ? 'encrypt' : 'decrypt',
+        resourceType: 'text',
+        resourceName: 'Text Message',
+        status: 'failed'
+      });
       toast.error(error.message || (isArabic ? "حدث خطأ أثناء المعالجة" : "An error occurred during processing"));
       console.error("Processing error:", error);
     }
