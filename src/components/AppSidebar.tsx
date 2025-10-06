@@ -18,7 +18,8 @@ import {
   User,
   BarChart3,
   History,
-  HardDrive
+  HardDrive,
+  Layout
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
@@ -105,6 +106,7 @@ export function AppSidebar() {
     { title: text.videoEncryption, url: "/video-encryption", icon: VideoIcon },
     { title: isArabic ? "تشفير الملفات" : "File Encryption", url: "/file-encryption", icon: FileText },
     { title: text.passwordGenerator, url: "/password-generator", icon: KeyRound },
+    { title: isArabic ? "قوالب التشفير" : "Templates", url: "/templates", icon: Layout },
     { title: text.shareApp, url: "/share", icon: Share2 },
   ];
 

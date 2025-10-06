@@ -26,6 +26,7 @@ import Admin from "./pages/Admin";
 import Statistics from "./pages/Statistics";
 import ActivityLog from "./pages/ActivityLog";
 import Backups from "./pages/Backups";
+import Templates from "./pages/Templates";
 
 // Add support for crypto-js
 declare global {
@@ -68,6 +69,7 @@ const App = () => (
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/activity-log" element={<ActivityLog />} />
                     <Route path="/backups" element={<Backups />} />
+                    <Route path="/templates" element={<Templates />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAppSettings } from "@/hooks/useAppSettings";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface Profile {
   id: string;
@@ -131,6 +132,8 @@ const Header = () => {
         </Link>
 
         <div className="flex items-center gap-1 md:gap-2">
+          <ThemeToggle />
+          
           {/* Desktop Navigation */}
           <div className="hidden sm:block">
             <DropdownMenu>

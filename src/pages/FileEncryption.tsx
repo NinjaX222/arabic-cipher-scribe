@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FileText, Upload, Download, Lock, Unlock, Eye, EyeOff, Copy, Check } from "lucide-react";
+import { useState, useRef } from "react";
+import { FileText, Upload, Download, Lock, Unlock, Eye, EyeOff, Copy, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import { encryptAES, decryptAES } from "@/utils/encryption";
 
 const FileEncryption = () => {
   const { isArabic } = useCipher();
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [password, setPassword] = useState("");
   const [decryptPassword, setDecryptPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -23,11 +23,13 @@ const FileEncryption = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const text = isArabic ? {
     title: "تشفير الملفات",
     subtitle: "قم بتشفير وفك تشفير الملفات بأمان تام",
-    selectFile: "اختر ملف",
+    selectFile: "اختر ملفات",
     password: "كلمة المرور",
     encrypt: "تشفير",
     decrypt: "فك التشفير", 
@@ -40,15 +42,18 @@ const FileEncryption = () => {
     decryptTab: "فك التشفير",
     passwordPlaceholder: "أدخل كلمة مرور قوية",
     encryptedDataPlaceholder: "الصق البيانات المشفرة هنا",
-    noFileSelected: "لم يتم اختيار ملف",
-    fileEncrypted: "تم تشفير الملف بنجاح",
+    noFileSelected: "لم يتم اختيار ملفات",
+    fileEncrypted: "تم تشفير الملفات بنجاح",
     fileDecrypted: "تم فك تشفير الملف بنجاح",
-    processingFile: "جاري معالجة الملف...",
-    invalidData: "بيانات غير صالحة أو كلمة مرور خاطئة"
+    processingFile: "جاري معالجة الملفات...",
+    invalidData: "بيانات غير صالحة أو كلمة مرور خاطئة",
+    dragDrop: "اسحب الملفات هنا أو انقر للاختيار",
+    selectedFiles: "الملفات المحددة",
+    remove: "إزالة"
   } : {
     title: "File Encryption",
     subtitle: "Encrypt and decrypt files with complete security",
-    selectFile: "Select File",
+    selectFile: "Select Files",
     password: "Password",
     encrypt: "Encrypt",
     decrypt: "Decrypt",
@@ -61,23 +66,49 @@ const FileEncryption = () => {
     decryptTab: "Decrypt", 
     passwordPlaceholder: "Enter a strong password",
     encryptedDataPlaceholder: "Paste encrypted data here",
-    noFileSelected: "No file selected",
-    fileEncrypted: "File encrypted successfully",
+    noFileSelected: "No files selected",
+    fileEncrypted: "Files encrypted successfully",
     fileDecrypted: "File decrypted successfully",
-    processingFile: "Processing file...",
-    invalidData: "Invalid data or wrong password"
+    processingFile: "Processing files...",
+    invalidData: "Invalid data or wrong password",
+    dragDrop: "Drag files here or click to select",
+    selectedFiles: "Selected Files",
+    remove: "Remove"
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = Array.from(event.target.files || []);
+    if (files.length > 0) {
+      setSelectedFiles(prev => [...prev, ...files]);
     }
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      setSelectedFiles(prev => [...prev, ...files]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleEncrypt = async () => {
-    if (!selectedFile || !password) {
-      toast.error(isArabic ? "يرجى اختيار ملف وإدخال كلمة مرور" : "Please select a file and enter a password");
+    if (selectedFiles.length === 0 || !password) {
+      toast.error(isArabic ? "يرجى اختيار ملفات وإدخال كلمة مرور" : "Please select files and enter a password");
       return;
     }
 
@@ -85,34 +116,38 @@ const FileEncryption = () => {
     setProgress(0);
 
     try {
-      // Simulate progress
       const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 10, 90));
+        setProgress(prev => Math.min(prev + 5, 90));
       }, 100);
 
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const fileData = e.target?.result as string;
-        const fileInfo = {
-          name: selectedFile.name,
-          type: selectedFile.type,
-          data: fileData
-        };
+      const filesData = await Promise.all(
+        selectedFiles.map(file => {
+          return new Promise<{ name: string; type: string; data: string }>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              resolve({
+                name: file.name,
+                type: file.type,
+                data: e.target?.result as string
+              });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        })
+      );
 
-        const encrypted = encryptAES(JSON.stringify(fileInfo), password);
-        
-        clearInterval(progressInterval);
-        setProgress(100);
-        setEncryptedData(encrypted);
-        
-        setTimeout(() => {
-          setIsProcessing(false);
-          setProgress(0);
-          toast.success(text.fileEncrypted);
-        }, 500);
-      };
+      const encrypted = encryptAES(JSON.stringify(filesData), password);
       
-      reader.readAsDataURL(selectedFile);
+      clearInterval(progressInterval);
+      setProgress(100);
+      setEncryptedData(encrypted);
+      
+      setTimeout(() => {
+        setIsProcessing(false);
+        setProgress(0);
+        toast.success(text.fileEncrypted);
+      }, 500);
     } catch (error) {
       setIsProcessing(false);
       setProgress(0);
@@ -219,18 +254,49 @@ const FileEncryption = () => {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label>{text.selectFile}</Label>
-                  <div className="flex items-center gap-4">
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                      isDragging ? "border-primary bg-primary/5" : "border-border"
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">{text.dragDrop}</p>
                     <Input
+                      ref={fileInputRef}
                       type="file"
+                      multiple
                       onChange={handleFileSelect}
-                      className="flex-1"
+                      className="hidden"
                     />
-                    <Upload className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  {selectedFile && (
-                    <p className="text-sm text-muted-foreground">
-                      {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
-                    </p>
+                  
+                  {selectedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>{text.selectedFiles} ({selectedFiles.length})</Label>
+                      <div className="space-y-1">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                            <span className="text-sm truncate flex-1">
+                              {file.name} ({Math.round(file.size / 1024)} KB)
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFile(index);
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -266,7 +332,7 @@ const FileEncryption = () => {
 
                 <Button 
                   onClick={handleEncrypt} 
-                  disabled={!selectedFile || !password || isProcessing}
+                  disabled={selectedFiles.length === 0 || !password || isProcessing}
                   className="w-full"
                 >
                   <Lock className="h-4 w-4 mr-2" />
