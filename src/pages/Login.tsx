@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
-import { authService } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Login = () => {
@@ -20,7 +20,7 @@ const Login = () => {
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
-      const session = await authService.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate("/");
       }
@@ -64,15 +64,22 @@ const Login = () => {
 
     setIsLoading(true);
 
-    const result = await authService.signIn(email, password);
-    
-    setIsLoading(false);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (result.success) {
-      toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
-      navigate("/");
-    } else {
-      toast.error(result.message);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error(isArabic ? "حدث خطأ أثناء تسجيل الدخول" : "An error occurred during login");
+    } finally {
+      setIsLoading(false);
     }
   };
 

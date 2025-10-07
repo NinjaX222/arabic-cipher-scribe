@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { History, Calendar, Filter } from "lucide-react";
+import { History, Calendar, Filter, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/Header";
 import { useCipher } from "@/contexts/CipherContext";
@@ -44,7 +45,10 @@ const ActivityLog = () => {
     file: "ملف",
     image: "صورة",
     audio: "صوت",
-    video: "فيديو"
+    video: "فيديو",
+    clearAll: "حذف الكل",
+    clearConfirm: "هل أنت متأكد من حذف جميع السجلات؟",
+    cleared: "تم حذف السجلات"
   } : {
     title: "Activity Log",
     description: "Track all your encryption and decryption operations",
@@ -62,7 +66,10 @@ const ActivityLog = () => {
     file: "File",
     image: "Image",
     audio: "Audio",
-    video: "Video"
+    video: "Video",
+    clearAll: "Clear All",
+    clearConfirm: "Are you sure you want to delete all logs?",
+    cleared: "Logs cleared successfully"
   };
 
   useEffect(() => {
@@ -120,6 +127,28 @@ const ActivityLog = () => {
     return status === "success" ? "default" : "destructive";
   };
 
+  const clearAllLogs = async () => {
+    if (!confirm(text.clearConfirm)) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('activity_logs')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success(text.cleared);
+      setActivities([]);
+    } catch (error) {
+      console.error('Error clearing logs:', error);
+      toast.error(text.error);
+    }
+  };
+
   const filteredActivities = filterType === "all" 
     ? activities 
     : activities.filter(activity => activity.action_type === filterType);
@@ -128,12 +157,20 @@ const ActivityLog = () => {
     <div className="min-h-screen">
       <Header />
       <div className="container px-4 py-8">
-        <div className={`mb-8 ${isArabic ? "rtl font-arabic" : ""}`}>
-          <div className="flex items-center gap-3 mb-2">
-            <History className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">{text.title}</h1>
+        <div className={`mb-8 flex items-center justify-between ${isArabic ? "rtl font-arabic" : ""}`}>
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <History className="h-8 w-8 text-primary" />
+              <h1 className="text-3xl font-bold">{text.title}</h1>
+            </div>
+            <p className="text-muted-foreground">{text.description}</p>
           </div>
-          <p className="text-muted-foreground">{text.description}</p>
+          {activities.length > 0 && (
+            <Button variant="destructive" onClick={clearAllLogs}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              {text.clearAll}
+            </Button>
+          )}
         </div>
 
         {/* Filter */}

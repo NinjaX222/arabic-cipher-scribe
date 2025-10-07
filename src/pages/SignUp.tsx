@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
-import { authService } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const SignUp = () => {
@@ -27,7 +27,7 @@ const SignUp = () => {
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
-      const session = await authService.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigate("/");
       }
@@ -95,15 +95,30 @@ const SignUp = () => {
     
     setIsLoading(true);
 
-    const result = await authService.signUp(formData.name, formData.email, formData.password);
-    
-    setIsLoading(false);
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+          },
+          emailRedirectTo: redirectUrl,
+        },
+      });
 
-    if (result.success) {
-      toast.success(isArabic ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
-      navigate("/");
-    } else {
-      toast.error(result.message);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success(isArabic ? "تم إنشاء الحساب بنجاح" : "Account created successfully");
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error(isArabic ? "حدث خطأ أثناء إنشاء الحساب" : "An error occurred during signup");
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface UserWithRole {
@@ -187,23 +187,24 @@ const Admin = () => {
       if (error) throw error;
 
       data?.forEach(item => {
+        const val = item.value as any;
         switch (item.key) {
           case 'app_name':
-            setAppNameAr(item.value.ar || '');
-            setAppNameEn(item.value.en || '');
+            setAppNameAr(val?.ar || '');
+            setAppNameEn(val?.en || '');
             break;
           case 'app_tagline':
-            setTaglineAr(item.value.ar || '');
-            setTaglineEn(item.value.en || '');
+            setTaglineAr(val?.ar || '');
+            setTaglineEn(val?.en || '');
             break;
           case 'primary_color':
-            setPrimaryColor(item.value || '');
+            setPrimaryColor(String(val || ''));
             break;
           case 'secondary_color':
-            setSecondaryColor(item.value || '');
+            setSecondaryColor(String(val || ''));
             break;
           case 'accent_color':
-            setAccentColor(item.value || '');
+            setAccentColor(String(val || ''));
             break;
         }
       });
@@ -260,7 +261,7 @@ const Admin = () => {
       // Then insert the new role
       const { error } = await supabase
         .from('user_roles')
-        .insert({ user_id: userId, role: newRole });
+        .insert([{ user_id: userId, role: newRole as 'admin' | 'moderator' | 'user' }]);
 
       if (error) throw error;
 
