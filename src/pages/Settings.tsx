@@ -7,7 +7,7 @@ import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { authService } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Settings = () => {
@@ -26,7 +26,7 @@ const Settings = () => {
   }, []);
 
   const checkAuth = async () => {
-    const session = await authService.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       setUser(session.user);
     }

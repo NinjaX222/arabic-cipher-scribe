@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCipher } from "@/contexts/CipherContext";
 import { Link, useNavigate } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { authService, supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -56,7 +56,7 @@ const Header = () => {
   useEffect(() => {
     // Check current session
     const checkAuth = async () => {
-      const session = await authService.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
         // Fetch profile data
@@ -75,7 +75,7 @@ const Header = () => {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser(session.user);
         // Fetch profile when user logs in
@@ -100,12 +100,14 @@ const Header = () => {
   }, []);
 
   const handleSignOut = async () => {
-    const result = await authService.signOut();
-    if (result.success) {
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
       setUser(null);
       setProfile(null);
       toast.success(isArabic ? "تم تسجيل الخروج بنجاح" : "Signed out successfully");
       navigate("/login");
+    } else {
+      toast.error(isArabic ? "فشل تسجيل الخروج" : "Failed to sign out");
     }
   };
 

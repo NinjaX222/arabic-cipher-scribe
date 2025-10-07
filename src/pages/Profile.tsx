@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
-import { authService, supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface Profile {
@@ -70,7 +70,7 @@ const Profile = () => {
 
   const loadProfile = async () => {
     try {
-      const user = await authService.getCurrentUser();
+      const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         toast.error(text.loginRequired);

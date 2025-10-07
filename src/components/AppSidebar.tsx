@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
-import { authService } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 import {
   Sidebar,
@@ -52,7 +52,20 @@ export function AppSidebar() {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    setCurrentUser(authService.getCurrentUser());
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    };
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setCurrentUser(session?.user || null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const text = isArabic ? {
