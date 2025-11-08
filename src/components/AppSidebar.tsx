@@ -19,7 +19,8 @@ import {
   BarChart3,
   History,
   HardDrive,
-  Layout
+  Layout,
+  FolderOpen
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
@@ -84,7 +85,8 @@ export function AppSidebar() {
     privacy: "سياسة الخصوصية",
     statistics: "الإحصائيات",
     activityLog: "سجل الأنشطة",
-    backups: "النسخ الاحتياطية"
+    backups: "النسخ الاحتياطية",
+    batchProcessing: "المعالجة الدفعية"
   } : {
     home: "Home",
     tools: "Encryption Tools",
@@ -101,7 +103,8 @@ export function AppSidebar() {
     privacy: "Privacy Policy",
     statistics: "Statistics",
     activityLog: "Activity Log",
-    backups: "Backups"
+    backups: "Backups",
+    batchProcessing: "Batch Processing"
   };
 
   const isActive = (path: string) => currentPath === path;
@@ -118,6 +121,7 @@ export function AppSidebar() {
     { title: text.imageEncryption, url: "/image-encryption", icon: ImageIcon },
     { title: text.videoEncryption, url: "/video-encryption", icon: VideoIcon },
     { title: isArabic ? "تشفير الملفات" : "File Encryption", url: "/file-encryption", icon: FileText },
+    { title: text.batchProcessing, url: "/batch-processing", icon: FolderOpen },
     { title: text.passwordGenerator, url: "/password-generator", icon: KeyRound },
     { title: isArabic ? "قوالب التشفير" : "Templates", url: "/templates", icon: Layout },
     { title: text.shareApp, url: "/share", icon: Share2 },
