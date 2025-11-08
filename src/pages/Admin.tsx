@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, Users, Database, Settings, Lock, Loader2, Trash2 } from "lucide-react";
+import { Shield, Users, Database, Settings, Lock, Loader2, Trash2, BarChart3, Activity, TrendingUp } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,10 +41,23 @@ const Admin = () => {
   const [uploading, setUploading] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
 
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalOperations: 0,
+    totalEncryptions: 0,
+    totalDecryptions: 0,
+    featureUsage: [] as { feature: string; count: number }[],
+    userGrowth: [] as { date: string; users: number }[]
+  });
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
   const text = isArabic ? {
     title: "لوحة تحكم المسؤول",
     subtitle: "إدارة النظام والمستخدمين",
     usersTab: "المستخدمون",
+    analyticsTab: "الإحصائيات",
     databaseTab: "قاعدة البيانات",
     settingsTab: "الإعدادات",
     securityTab: "الأمان",
@@ -88,11 +102,30 @@ const Admin = () => {
     imagesDesc: "رفع الشعار وصورة البانر",
     settingsSaved: "تم حفظ الإعدادات بنجاح",
     uploadSuccess: "تم رفع الصورة بنجاح",
-    uploadError: "فشل رفع الصورة"
+    uploadError: "فشل رفع الصورة",
+    totalUsers: "إجمالي المستخدمين",
+    activeUsers: "المستخدمون النشطون",
+    totalOperations: "إجمالي العمليات",
+    totalEncryptions: "عمليات التشفير",
+    totalDecryptions: "عمليات فك التشفير",
+    featureUsage: "استخدام الميزات",
+    userGrowth: "نمو المستخدمين",
+    last30Days: "آخر 30 يوم",
+    analyticsOverview: "نظرة عامة على الإحصائيات",
+    analyticsDesc: "تحليل شامل لاستخدام التطبيق",
+    mostUsedFeatures: "أكثر الميزات استخداماً",
+    operationsBreakdown: "توزيع العمليات",
+    files: "ملفات",
+    imagesFeature: "صور",
+    audio: "صوت",
+    video: "فيديو",
+    textFeature: "نص",
+    noData: "لا توجد بيانات"
   } : {
     title: "Admin Dashboard",
     subtitle: "System and user management",
     usersTab: "Users",
+    analyticsTab: "Analytics",
     databaseTab: "Database",
     settingsTab: "Settings",
     securityTab: "Security",
@@ -137,12 +170,106 @@ const Admin = () => {
     imagesDesc: "Upload logo and hero image",
     settingsSaved: "Settings saved successfully",
     uploadSuccess: "Image uploaded successfully",
-    uploadError: "Failed to upload image"
+    uploadError: "Failed to upload image",
+    totalUsers: "Total Users",
+    activeUsers: "Active Users",
+    totalOperations: "Total Operations",
+    totalEncryptions: "Encryptions",
+    totalDecryptions: "Decryptions",
+    featureUsage: "Feature Usage",
+    userGrowth: "User Growth",
+    last30Days: "Last 30 Days",
+    analyticsOverview: "Analytics Overview",
+    analyticsDesc: "Comprehensive app usage analysis",
+    mostUsedFeatures: "Most Used Features",
+    operationsBreakdown: "Operations Breakdown",
+    files: "Files",
+    imagesFeature: "Images",
+    audio: "Audio",
+    video: "Video",
+    textFeature: "Text",
+    noData: "No data available"
   };
 
   useEffect(() => {
     checkAdminAccess();
   }, []);
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoadingAnalytics(true);
+
+      // Get total users count
+      const { count: totalUsersCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // Get active users (users with activity in last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data: activeUsersData } = await supabase
+        .from('activity_logs')
+        .select('user_id')
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      const uniqueActiveUsers = new Set(activeUsersData?.map(a => a.user_id) || []);
+
+      // Get all statistics
+      const { data: allStats } = await supabase
+        .from('user_statistics')
+        .select('*');
+
+      const totalEncryptions = allStats?.reduce((sum, stat) => sum + (stat.total_encryptions || 0), 0) || 0;
+      const totalDecryptions = allStats?.reduce((sum, stat) => sum + (stat.total_decryptions || 0), 0) || 0;
+      const totalFiles = allStats?.reduce((sum, stat) => sum + (stat.total_files_encrypted || 0), 0) || 0;
+      const totalImages = allStats?.reduce((sum, stat) => sum + (stat.total_images_encrypted || 0), 0) || 0;
+      const totalAudio = allStats?.reduce((sum, stat) => sum + (stat.total_audio_encrypted || 0), 0) || 0;
+      const totalVideo = allStats?.reduce((sum, stat) => sum + (stat.total_video_encrypted || 0), 0) || 0;
+
+      // Feature usage breakdown
+      const featureUsage = [
+        { feature: text.files, count: totalFiles },
+        { feature: text.imagesFeature, count: totalImages },
+        { feature: text.audio, count: totalAudio },
+        { feature: text.video, count: totalVideo },
+        { feature: text.textFeature, count: totalEncryptions - (totalFiles + totalImages + totalAudio + totalVideo) }
+      ].filter(f => f.count > 0);
+
+      // User growth over last 30 days
+      const { data: userGrowthData } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: true });
+
+      const growthByDay: { [key: string]: number } = {};
+      userGrowthData?.forEach(user => {
+        const date = new Date(user.created_at).toLocaleDateString();
+        growthByDay[date] = (growthByDay[date] || 0) + 1;
+      });
+
+      const userGrowth = Object.entries(growthByDay).map(([date, users]) => ({
+        date,
+        users
+      }));
+
+      setAnalyticsData({
+        totalUsers: totalUsersCount || 0,
+        activeUsers: uniqueActiveUsers.size,
+        totalOperations: totalEncryptions + totalDecryptions,
+        totalEncryptions,
+        totalDecryptions,
+        featureUsage,
+        userGrowth
+      });
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      toast.error(text.error);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
 
   const checkAdminAccess = async () => {
     try {
@@ -171,6 +298,7 @@ const Admin = () => {
       setIsAdmin(true);
       fetchUsers();
       fetchSettings();
+      fetchAnalytics();
     } catch (error) {
       console.error('Error checking admin access:', error);
       toast.error(text.error);
@@ -391,8 +519,12 @@ const Admin = () => {
           <p className="text-muted-foreground">{text.subtitle}</p>
         </div>
 
-        <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+        <Tabs defaultValue="analytics" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
+            <TabsTrigger value="analytics">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              {text.analyticsTab}
+            </TabsTrigger>
             <TabsTrigger value="users">
               <Users className="h-4 w-4 mr-2" />
               {text.usersTab}
@@ -410,6 +542,164 @@ const Admin = () => {
               {text.securityTab}
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics" className="mt-6">
+            <div className="space-y-6">
+              {/* Overview Cards */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{text.totalUsers}</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{analyticsData.totalUsers}</div>
+                    <p className="text-xs text-muted-foreground">{text.last30Days}</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{text.activeUsers}</CardTitle>
+                    <Activity className="h-4 w-4 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{analyticsData.activeUsers}</div>
+                    <p className="text-xs text-muted-foreground">{text.last30Days}</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{text.totalOperations}</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{analyticsData.totalOperations}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {analyticsData.totalEncryptions} / {analyticsData.totalDecryptions}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{text.totalEncryptions}</CardTitle>
+                    <Shield className="h-4 w-4 text-purple-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{analyticsData.totalEncryptions}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {analyticsData.totalOperations > 0 
+                        ? `${((analyticsData.totalEncryptions / analyticsData.totalOperations) * 100).toFixed(1)}%` 
+                        : '0%'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts */}
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Feature Usage Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{text.mostUsedFeatures}</CardTitle>
+                    <CardDescription>{text.featureUsage}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingAnalytics ? (
+                      <div className="h-[300px] flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : analyticsData.featureUsage.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={analyticsData.featureUsage}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="feature" />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="count" fill="hsl(var(--primary))" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        {text.noData}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Operations Breakdown */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{text.operationsBreakdown}</CardTitle>
+                    <CardDescription>{text.analyticsDesc}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingAnalytics ? (
+                      <div className="h-[300px] flex items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : analyticsData.totalOperations > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: text.totalEncryptions, value: analyticsData.totalEncryptions },
+                              { name: text.totalDecryptions, value: analyticsData.totalDecryptions }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={80}
+                            dataKey="value"
+                          >
+                            <Cell fill="hsl(var(--primary))" />
+                            <Cell fill="hsl(var(--secondary))" />
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        {text.noData}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* User Growth Chart */}
+                {analyticsData.userGrowth.length > 0 && (
+                  <Card className="md:col-span-2">
+                    <CardHeader>
+                      <CardTitle>{text.userGrowth}</CardTitle>
+                      <CardDescription>{text.last30Days}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={analyticsData.userGrowth}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="users" 
+                            stroke="hsl(var(--primary))" 
+                            strokeWidth={2}
+                            name={text.totalUsers}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </TabsContent>
 
           <TabsContent value="users" className="mt-6">
             <Card>
