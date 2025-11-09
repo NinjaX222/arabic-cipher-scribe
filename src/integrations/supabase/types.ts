@@ -170,6 +170,57 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_files: {
+        Row: {
+          created_at: string
+          download_count: number | null
+          encrypted_data: string
+          expires_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string
+          id: string
+          is_active: boolean | null
+          last_accessed_at: string | null
+          max_downloads: number | null
+          password_hash: string | null
+          share_token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          download_count?: number | null
+          encrypted_data: string
+          expires_at: string
+          file_name: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          max_downloads?: number | null
+          password_hash?: string | null
+          share_token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          download_count?: number | null
+          encrypted_data?: string
+          expires_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          is_active?: boolean | null
+          last_accessed_at?: string | null
+          max_downloads?: number | null
+          password_hash?: string | null
+          share_token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null

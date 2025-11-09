@@ -124,6 +124,7 @@ export function AppSidebar() {
     { title: text.batchProcessing, url: "/batch-processing", icon: FolderOpen },
     { title: text.passwordGenerator, url: "/password-generator", icon: KeyRound },
     { title: isArabic ? "قوالب التشفير" : "Templates", url: "/templates", icon: Layout },
+    { title: isArabic ? "المشاركة الآمنة" : "Secure Share", url: "/secure-share", icon: Shield },
     { title: text.shareApp, url: "/share", icon: Share2 },
   ];
 

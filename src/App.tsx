@@ -16,6 +16,8 @@ import VideoEncryption from "./pages/VideoEncryption";
 import PasswordGenerator from "./pages/PasswordGenerator";
 import ShareApp from "./pages/ShareApp";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import SecureShare from "./pages/SecureShare";
+import SharedFileView from "./pages/SharedFileView";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Settings from "./pages/Settings";
@@ -60,6 +62,8 @@ const App = () => (
                     <Route path="/video-encryption" element={<VideoEncryption />} />
                     <Route path="/password-generator" element={<PasswordGenerator />} />
                     <Route path="/share" element={<ShareApp />} />
+                    <Route path="/secure-share" element={<SecureShare />} />
+                    <Route path="/shared/:token" element={<SharedFileView />} />
                     <Route path="/privacy" element={<PrivacyPolicy />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<SignUp />} />
