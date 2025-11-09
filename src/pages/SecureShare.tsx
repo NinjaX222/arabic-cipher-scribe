@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Share2, Copy, Trash2, ExternalLink } from 'lucide-react';
+import { Upload, Share2, Copy, Trash2, ExternalLink, Mail } from 'lucide-react';
 import { encryptAES } from '@/utils/encryption';
 import { logActivity } from '@/utils/activityLogger';
 import CryptoJS from 'crypto-js';
@@ -36,6 +37,9 @@ const SecureShare = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [sharedFiles, setSharedFiles] = useState<SharedFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [sendEmail, setSendEmail] = useState(false);
 
   const text = isArabic ? {
     title: 'المشاركة الآمنة',
@@ -55,6 +59,11 @@ const SecureShare = () => {
     maxDownloads: 'الحد الأقصى للتحميلات',
     maxDownloadsPlaceholder: 'اتركه فارغاً لعدد غير محدود',
     createLink: 'إنشاء رابط المشاركة',
+    sendEmailNotification: 'إرسال إشعار بالبريد الإلكتروني',
+    recipientEmail: 'بريد المستلم',
+    recipientEmailPlaceholder: 'example@email.com',
+    emailMessage: 'رسالة اختيارية',
+    emailMessagePlaceholder: 'أضف رسالة للمستلم...',
     myShares: 'روابط المشاركة الخاصة بي',
     fileName: 'اسم الملف',
     expiresAt: 'تنتهي في',
@@ -93,6 +102,11 @@ const SecureShare = () => {
     maxDownloads: 'Max Downloads',
     maxDownloadsPlaceholder: 'Leave empty for unlimited',
     createLink: 'Create Share Link',
+    sendEmailNotification: 'Send Email Notification',
+    recipientEmail: 'Recipient Email',
+    recipientEmailPlaceholder: 'example@email.com',
+    emailMessage: 'Optional Message',
+    emailMessagePlaceholder: 'Add a message for recipient...',
     myShares: 'My Shared Links',
     fileName: 'File Name',
     expiresAt: 'Expires At',
@@ -213,6 +227,26 @@ const SecureShare = () => {
       });
 
       toast({ title: text.uploadSuccess });
+
+      // Send email notification if requested
+      if (sendEmail && recipientEmail.trim()) {
+        try {
+          await supabase.functions.invoke('send-share-notification', {
+            body: {
+              shareId: data.id,
+              recipientEmail: recipientEmail.trim(),
+              message: emailMessage.trim()
+            }
+          });
+          toast({ title: isArabic ? 'تم إرسال الإشعار بنجاح' : 'Notification sent successfully' });
+        } catch (emailError) {
+          console.error('Email notification error:', emailError);
+          toast({ 
+            title: isArabic ? 'فشل إرسال الإشعار' : 'Failed to send notification',
+            variant: 'destructive'
+          });
+        }
+      }
       
       // Reset form
       setFile(null);
@@ -220,6 +254,9 @@ const SecureShare = () => {
       setSharePassword('');
       setUsePassword(false);
       setMaxDownloads('');
+      setRecipientEmail('');
+      setEmailMessage('');
+      setSendEmail(false);
       
       // Refresh list
       fetchSharedFiles();
@@ -370,6 +407,39 @@ const SecureShare = () => {
                 min="1"
               />
             </div>
+
+            {/* Email Notification */}
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                {text.sendEmailNotification}
+              </Label>
+              <Switch checked={sendEmail} onCheckedChange={setSendEmail} />
+            </div>
+
+            {sendEmail && (
+              <>
+                <div className="space-y-2">
+                  <Label>{text.recipientEmail}</Label>
+                  <Input
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    placeholder={text.recipientEmailPlaceholder}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{text.emailMessage}</Label>
+                  <Textarea
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    placeholder={text.emailMessagePlaceholder}
+                    rows={3}
+                  />
+                </div>
+              </>
+            )}
 
             {/* Create Button */}
             <Button
