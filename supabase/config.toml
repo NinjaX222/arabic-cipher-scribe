@@ -3,5 +3,8 @@ project_id = "idpmmvefmruvnjypflbr"
 [functions.send-share-notification]
 verify_jwt = true
 
+[functions.send-scheduled-notifications]
+verify_jwt = false
+
 [functions.check-expiring-shares]
 verify_jwt = false

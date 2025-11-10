@@ -7,11 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Share2, Copy, Trash2, ExternalLink, Mail } from 'lucide-react';
+import { Upload, Share2, Copy, Trash2, ExternalLink, Mail, CalendarIcon, Clock } from 'lucide-react';
 import { encryptAES } from '@/utils/encryption';
 import { logActivity } from '@/utils/activityLogger';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import CryptoJS from 'crypto-js';
 
 interface SharedFile {
@@ -40,6 +44,9 @@ const SecureShare = () => {
   const [recipientEmail, setRecipientEmail] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   const [sendEmail, setSendEmail] = useState(false);
+  const [scheduleDelivery, setScheduleDelivery] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState<Date>();
+  const [scheduledTime, setScheduledTime] = useState('12:00');
 
   const text = isArabic ? {
     title: 'المشاركة الآمنة',
@@ -64,6 +71,12 @@ const SecureShare = () => {
     recipientEmailPlaceholder: 'example@email.com',
     emailMessage: 'رسالة اختيارية',
     emailMessagePlaceholder: 'أضف رسالة للمستلم...',
+    scheduleDelivery: 'جدولة الإرسال',
+    scheduledDate: 'تاريخ الإرسال',
+    scheduledTime: 'وقت الإرسال',
+    pickDate: 'اختر التاريخ',
+    scheduledFor: 'مجدول لـ',
+    sendNow: 'إرسال فوري',
     myShares: 'روابط المشاركة الخاصة بي',
     fileName: 'اسم الملف',
     expiresAt: 'تنتهي في',
@@ -107,6 +120,12 @@ const SecureShare = () => {
     recipientEmailPlaceholder: 'example@email.com',
     emailMessage: 'Optional Message',
     emailMessagePlaceholder: 'Add a message for recipient...',
+    scheduleDelivery: 'Schedule Delivery',
+    scheduledDate: 'Send Date',
+    scheduledTime: 'Send Time',
+    pickDate: 'Pick a date',
+    scheduledFor: 'Scheduled for',
+    sendNow: 'Send Now',
     myShares: 'My Shared Links',
     fileName: 'File Name',
     expiresAt: 'Expires At',
@@ -175,6 +194,21 @@ const SecureShare = () => {
       return;
     }
 
+    if (sendEmail) {
+      if (!recipientEmail.trim()) {
+        toast({ title: text.enterPassword, variant: 'destructive' });
+        return;
+      }
+
+      if (scheduleDelivery && !scheduledDate) {
+        toast({ 
+          title: isArabic ? 'يرجى اختيار تاريخ الإرسال' : 'Please select send date',
+          variant: 'destructive' 
+        });
+        return;
+      }
+    }
+
     setIsUploading(true);
 
     try {
@@ -201,6 +235,23 @@ const SecureShare = () => {
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + parseInt(expiryHours));
 
+      // Calculate scheduled send time if scheduled
+      let scheduledSendAt = null;
+      if (sendEmail && scheduleDelivery && scheduledDate) {
+        const [hours, minutes] = scheduledTime.split(':').map(Number);
+        scheduledSendAt = new Date(scheduledDate);
+        scheduledSendAt.setHours(hours, minutes, 0, 0);
+      }
+
+      // Prepare details object with recipient info
+      const details: any = {};
+      if (sendEmail && recipientEmail.trim()) {
+        details.recipient_email = recipientEmail.trim();
+        if (emailMessage.trim()) {
+          details.message = emailMessage.trim();
+        }
+      }
+
       // Insert into database
       const { data, error } = await supabase
         .from('shared_files')
@@ -213,6 +264,8 @@ const SecureShare = () => {
           password_hash: passwordHash,
           expires_at: expiresAt.toISOString(),
           max_downloads: maxDownloads ? parseInt(maxDownloads) : null,
+          scheduled_send_at: scheduledSendAt?.toISOString() || null,
+          details: Object.keys(details).length > 0 ? details : null,
         })
         .select()
         .single();
@@ -228,8 +281,8 @@ const SecureShare = () => {
 
       toast({ title: text.uploadSuccess });
 
-      // Send email notification if requested
-      if (sendEmail && recipientEmail.trim()) {
+      // Send email notification if requested and not scheduled
+      if (sendEmail && recipientEmail.trim() && !scheduleDelivery) {
         try {
           await supabase.functions.invoke('send-share-notification', {
             body: {
@@ -246,6 +299,13 @@ const SecureShare = () => {
             variant: 'destructive'
           });
         }
+      } else if (sendEmail && scheduleDelivery) {
+        toast({ 
+          title: isArabic ? 'تم جدولة الإرسال بنجاح' : 'Delivery scheduled successfully',
+          description: isArabic 
+            ? `سيتم الإرسال في ${format(scheduledDate!, 'PPP')} الساعة ${scheduledTime}`
+            : `Will be sent on ${format(scheduledDate!, 'PPP')} at ${scheduledTime}`
+        });
       }
       
       // Reset form
@@ -257,6 +317,9 @@ const SecureShare = () => {
       setRecipientEmail('');
       setEmailMessage('');
       setSendEmail(false);
+      setScheduleDelivery(false);
+      setScheduledDate(undefined);
+      setScheduledTime('12:00');
       
       // Refresh list
       fetchSharedFiles();
@@ -435,9 +498,59 @@ const SecureShare = () => {
                     value={emailMessage}
                     onChange={(e) => setEmailMessage(e.target.value)}
                     placeholder={text.emailMessagePlaceholder}
-                    rows={3}
+                  rows={3}
                   />
                 </div>
+
+                {/* Schedule Delivery */}
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    {text.scheduleDelivery}
+                  </Label>
+                  <Switch checked={scheduleDelivery} onCheckedChange={setScheduleDelivery} />
+                </div>
+
+                {scheduleDelivery && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>{text.scheduledDate}</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !scheduledDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {scheduledDate ? format(scheduledDate, "PPP") : <span>{text.pickDate}</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={scheduledDate}
+                            onSelect={setScheduledDate}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>{text.scheduledTime}</Label>
+                      <Input
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
               </>
             )}
 

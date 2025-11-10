@@ -183,7 +183,9 @@ export type Database = {
           is_active: boolean | null
           last_accessed_at: string | null
           max_downloads: number | null
+          notification_sent: boolean | null
           password_hash: string | null
+          scheduled_send_at: string | null
           share_token: string
           user_id: string
         }
@@ -199,7 +201,9 @@ export type Database = {
           is_active?: boolean | null
           last_accessed_at?: string | null
           max_downloads?: number | null
+          notification_sent?: boolean | null
           password_hash?: string | null
+          scheduled_send_at?: string | null
           share_token?: string
           user_id: string
         }
@@ -215,7 +219,9 @@ export type Database = {
           is_active?: boolean | null
           last_accessed_at?: string | null
           max_downloads?: number | null
+          notification_sent?: boolean | null
           password_hash?: string | null
+          scheduled_send_at?: string | null
           share_token?: string
           user_id?: string
         }
