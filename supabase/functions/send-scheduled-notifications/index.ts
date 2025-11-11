@@ -1,8 +1,11 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from "npm:resend@2.0.0";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,224 +18,197 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
+    const supabase = createClient(supabaseUrl, supabaseKey);
     const now = new Date();
+    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
 
-    // Get shares that are scheduled to be sent now or in the past and haven't been sent yet
-    const { data: scheduledShares, error: sharesError } = await supabase
+    // 1. إرسال التذكيرات (قبل ساعة من الإرسال)
+    const { data: reminderShares, error: reminderError } = await supabase
       .from('shared_files')
-      .select(`
-        *,
-        profiles!shared_files_user_id_fkey (name, email)
-      `)
-      .eq('notification_sent', false)
+      .select('*')
       .not('scheduled_send_at', 'is', null)
+      .eq('reminder_sent', false)
+      .lte('scheduled_send_at', oneHourFromNow.toISOString())
+      .gte('scheduled_send_at', now.toISOString());
+
+    if (reminderError) {
+      console.error('Error fetching reminder shares:', reminderError);
+    } else if (reminderShares && reminderShares.length > 0) {
+      console.log(`Processing ${reminderShares.length} reminder notifications`);
+      
+      for (const share of reminderShares) {
+        const details = share.details as { recipient_email?: string; message?: string } | null;
+        if (details?.recipient_email) {
+          try {
+            const shareUrl = `${Deno.env.get('SITE_URL')}/shared/${share.share_token}`;
+            const scheduledTime = new Date(share.scheduled_send_at).toLocaleString('ar-SA');
+
+            await resend.emails.send({
+              from: "Cipher Guard <onboarding@resend.dev>",
+              to: [details.recipient_email],
+              subject: "تذكير: إرسال مجدول خلال ساعة",
+              html: `
+                <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2>تذكير بإرسال مجدول</h2>
+                  <p>مرحباً،</p>
+                  <p>هذا تذكير بأن لديك ملف مجدول للإرسال خلال ساعة واحدة.</p>
+                  <div style="background-color: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                    <p><strong>اسم الملف:</strong> ${share.file_name}</p>
+                    <p><strong>موعد الإرسال:</strong> ${scheduledTime}</p>
+                    ${details.message ? `<p><strong>الرسالة:</strong> ${details.message}</p>` : ''}
+                  </div>
+                  <p>سيتم إرسال الرابط تلقائياً في الموعد المحدد.</p>
+                  <p>مع تحيات فريق Cipher Guard</p>
+                </div>
+              `,
+            });
+
+            // Mark reminder as sent
+            await supabase
+              .from('shared_files')
+              .update({ reminder_sent: true })
+              .eq('id', share.id);
+
+            console.log(`Reminder sent for share ${share.id}`);
+          } catch (emailError) {
+            console.error(`Error sending reminder for share ${share.id}:`, emailError);
+          }
+        }
+      }
+    }
+
+    // 2. إرسال الإشعارات المجدولة
+    const { data: shares, error: sharesError } = await supabase
+      .from('shared_files')
+      .select('*')
+      .not('scheduled_send_at', 'is', null)
+      .eq('notification_sent', false)
       .lte('scheduled_send_at', now.toISOString());
 
     if (sharesError) {
+      console.error('Error processing scheduled notifications:', sharesError);
       throw sharesError;
     }
 
-    console.log(`Found ${scheduledShares?.length || 0} scheduled shares to send`);
+    if (!shares || shares.length === 0) {
+      console.log('No scheduled notifications to send');
+      return new Response(
+        JSON.stringify({ message: 'No scheduled notifications to send' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
 
-    const emailResults = [];
+    console.log(`Processing ${shares.length} scheduled notifications`);
+    const results = [];
 
-    // Process each scheduled share
-    for (const share of scheduledShares || []) {
+    for (const share of shares) {
+      const details = share.details as { recipient_email?: string; message?: string } | null;
+      
+      if (!details?.recipient_email) {
+        console.log(`Skipping share ${share.id}: no recipient email`);
+        continue;
+      }
+
       try {
-        // Parse the recipient email from details if stored
-        const recipientEmail = share.details?.recipient_email;
-        const customMessage = share.details?.message;
-
-        if (!recipientEmail) {
-          console.log(`No recipient email found for share ${share.id}, skipping`);
-          continue;
-        }
-
-        const senderName = share.profiles?.name || share.profiles?.email || 'A user';
-        const shareLink = `${Deno.env.get('SITE_URL') || 'https://your-domain.com'}/shared/${share.share_token}`;
-        const expiryDate = new Date(share.expires_at).toLocaleString('en-US', {
-          dateStyle: 'full',
-          timeStyle: 'short'
-        });
-
-        // Send the notification email
+        const shareUrl = `${Deno.env.get('SITE_URL')}/shared/${share.share_token}`;
+        
         const emailResponse = await resend.emails.send({
           from: "Cipher Guard <onboarding@resend.dev>",
-          to: [recipientEmail],
-          subject: `${senderName} shared a secure file with you`,
+          to: [details.recipient_email],
+          subject: "ملف مشفر مشارك معك",
           html: `
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                  body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    max-width: 600px;
-                    margin: 0 auto;
-                    padding: 20px;
-                  }
-                  .header {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 30px;
-                    border-radius: 10px 10px 0 0;
-                    text-align: center;
-                  }
-                  .content {
-                    background: #f9fafb;
-                    padding: 30px;
-                    border: 1px solid #e5e7eb;
-                    border-top: none;
-                  }
-                  .file-info {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin: 20px 0;
-                    border-left: 4px solid #667eea;
-                  }
-                  .button {
-                    display: inline-block;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 14px 28px;
-                    text-decoration: none;
-                    border-radius: 6px;
-                    font-weight: 600;
-                    margin: 20px 0;
-                  }
-                  .footer {
-                    text-align: center;
-                    margin-top: 30px;
-                    padding-top: 20px;
-                    border-top: 1px solid #e5e7eb;
-                    color: #6b7280;
-                    font-size: 14px;
-                  }
-                  .warning {
-                    background: #fef3c7;
-                    border: 1px solid #fbbf24;
-                    padding: 15px;
-                    border-radius: 6px;
-                    margin: 20px 0;
-                  }
-                  .scheduled-badge {
-                    background: #dbeafe;
-                    color: #1e40af;
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    display: inline-block;
-                    font-size: 14px;
-                    margin-bottom: 15px;
-                  }
-                </style>
-              </head>
-              <body>
-                <div class="header">
-                  <h1 style="margin: 0; font-size: 28px;">🔐 Secure File Shared</h1>
-                </div>
-                <div class="content">
-                  <div class="scheduled-badge">
-                    📅 Scheduled Delivery
-                  </div>
-
-                  <p><strong>${senderName}</strong> has securely shared an encrypted file with you.</p>
-                  
-                  ${customMessage ? `<p style="font-style: italic; color: #6b7280; background: white; padding: 15px; border-left: 3px solid #667eea; border-radius: 4px;">"${customMessage}"</p>` : ''}
-                  
-                  <div class="file-info">
-                    <h3 style="margin-top: 0; color: #667eea;">📄 File Details</h3>
-                    <p><strong>File Name:</strong> ${share.file_name}</p>
-                    <p><strong>File Size:</strong> ${(share.file_size / 1024).toFixed(2)} KB</p>
-                    <p><strong>Expires:</strong> ${expiryDate}</p>
-                    ${share.max_downloads ? `<p><strong>Max Downloads:</strong> ${share.max_downloads}</p>` : ''}
-                  </div>
-
-                  <div style="text-align: center;">
-                    <a href="${shareLink}" class="button">
-                      Download Encrypted File
-                    </a>
-                  </div>
-
-                  <div class="warning">
-                    <p style="margin: 0;"><strong>⚠️ Important:</strong></p>
-                    <ul style="margin: 10px 0 0 0;">
-                      <li>You will need the decryption key from ${senderName} to access the file</li>
-                      <li>This link will expire on ${expiryDate}</li>
-                      ${share.password_hash ? '<li>This file is password protected</li>' : ''}
-                    </ul>
-                  </div>
-
-                  <p style="color: #6b7280; font-size: 14px;">
-                    If you're having trouble with the button above, copy and paste this URL into your browser:<br>
-                    <a href="${shareLink}" style="color: #667eea;">${shareLink}</a>
-                  </p>
-                </div>
-                <div class="footer">
-                  <p>This is an automated scheduled message from Cipher Guard</p>
-                  <p>Please do not reply to this email</p>
-                </div>
-              </body>
-            </html>
+            <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>تم مشاركة ملف مشفر معك</h2>
+              <p>مرحباً،</p>
+              <p>تم مشاركة ملف مشفر معك عبر Cipher Guard.</p>
+              <div style="background-color: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                <p><strong>اسم الملف:</strong> ${share.file_name}</p>
+                ${details.message ? `<p><strong>رسالة المرسل:</strong> ${details.message}</p>` : ''}
+              </div>
+              <p style="margin: 25px 0;">
+                <a href="${shareUrl}" style="background-color: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                  فتح الملف المشفر
+                </a>
+              </p>
+              <p style="color: #666; font-size: 14px;">
+                <strong>ملاحظة:</strong> هذا الرابط محمي وسينتهي بعد ${Math.round((new Date(share.expires_at).getTime() - Date.now()) / (1000 * 60 * 60))} ساعة.
+              </p>
+            </div>
           `,
         });
 
-        // Mark notification as sent
+        console.log(`Email sent for share ${share.id}:`, emailResponse);
+
+        // تحديث حالة الإرسال وحساب الإرسال التالي للتكرارات
+        const updates: any = {
+          notification_sent: true,
+          last_sent_at: now.toISOString(),
+        };
+
+        // حساب موعد الإرسال التالي للإرسالات المتكررة
+        if (share.recurrence_type && share.recurrence_type !== 'none') {
+          const currentSendDate = new Date(share.scheduled_send_at);
+          let nextSendDate = new Date(currentSendDate);
+
+          switch (share.recurrence_type) {
+            case 'daily':
+              nextSendDate.setDate(currentSendDate.getDate() + 1);
+              break;
+            case 'weekly':
+              nextSendDate.setDate(currentSendDate.getDate() + 7);
+              break;
+            case 'monthly':
+              nextSendDate.setMonth(currentSendDate.getMonth() + 1);
+              break;
+          }
+
+          // التحقق من عدم تجاوز تاريخ النهاية
+          const endDate = share.recurrence_end_date ? new Date(share.recurrence_end_date) : null;
+          if (!endDate || nextSendDate <= endDate) {
+            updates.next_send_at = nextSendDate.toISOString();
+            updates.scheduled_send_at = nextSendDate.toISOString();
+            updates.notification_sent = false;
+            updates.reminder_sent = false;
+          } else {
+            // انتهى التكرار
+            updates.next_send_at = null;
+            updates.recurrence_type = 'none';
+          }
+        }
+
         await supabase
           .from('shared_files')
-          .update({ notification_sent: true })
+          .update(updates)
           .eq('id', share.id);
 
-        emailResults.push({
-          shareId: share.id,
-          recipient: recipientEmail,
+        results.push({
+          id: share.id,
           status: 'sent',
-          result: emailResponse
+          recipient: details.recipient_email,
         });
-
-        console.log(`Scheduled notification sent for share ${share.id} to ${recipientEmail}`);
-      } catch (emailError) {
-        console.error(`Failed to send scheduled notification for share ${share.id}:`, emailError);
-        emailResults.push({
-          shareId: share.id,
+      } catch (error) {
+        console.error(`Error processing share ${share.id}:`, error);
+        results.push({
+          id: share.id,
           status: 'failed',
-          error: emailError.message
+          error: error.message,
         });
       }
     }
 
     return new Response(
       JSON.stringify({
-        success: true,
-        processed: scheduledShares?.length || 0,
-        notifications: emailResults.length,
-        results: emailResults
+        message: 'Scheduled notifications processed',
+        processed: results.length,
+        results,
       }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error: any) {
-    console.error("Error processing scheduled notifications:", error);
+    console.error('Error processing scheduled notifications:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 };

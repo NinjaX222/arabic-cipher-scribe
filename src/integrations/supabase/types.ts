@@ -182,9 +182,14 @@ export type Database = {
           id: string
           is_active: boolean | null
           last_accessed_at: string | null
+          last_sent_at: string | null
           max_downloads: number | null
+          next_send_at: string | null
           notification_sent: boolean | null
           password_hash: string | null
+          recurrence_end_date: string | null
+          recurrence_type: string | null
+          reminder_sent: boolean | null
           scheduled_send_at: string | null
           share_token: string
           user_id: string
@@ -200,9 +205,14 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_accessed_at?: string | null
+          last_sent_at?: string | null
           max_downloads?: number | null
+          next_send_at?: string | null
           notification_sent?: boolean | null
           password_hash?: string | null
+          recurrence_end_date?: string | null
+          recurrence_type?: string | null
+          reminder_sent?: boolean | null
           scheduled_send_at?: string | null
           share_token?: string
           user_id: string
@@ -218,9 +228,14 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           last_accessed_at?: string | null
+          last_sent_at?: string | null
           max_downloads?: number | null
+          next_send_at?: string | null
           notification_sent?: boolean | null
           password_hash?: string | null
+          recurrence_end_date?: string | null
+          recurrence_type?: string | null
+          reminder_sent?: boolean | null
           scheduled_send_at?: string | null
           share_token?: string
           user_id?: string

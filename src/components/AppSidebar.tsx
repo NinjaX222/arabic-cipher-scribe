@@ -20,7 +20,8 @@ import {
   History,
   HardDrive,
   Layout,
-  FolderOpen
+  FolderOpen,
+  Clock
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
@@ -125,6 +126,7 @@ export function AppSidebar() {
     { title: text.passwordGenerator, url: "/password-generator", icon: KeyRound },
     { title: isArabic ? "قوالب التشفير" : "Templates", url: "/templates", icon: Layout },
     { title: isArabic ? "المشاركة الآمنة" : "Secure Share", url: "/secure-share", icon: Shield },
+    { title: isArabic ? "الإرسالات المجدولة" : "Scheduled Shares", url: "/scheduled-shares", icon: Clock },
     { title: text.shareApp, url: "/share", icon: Share2 },
   ];
 

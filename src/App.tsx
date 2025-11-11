@@ -31,6 +31,8 @@ import Backups from "./pages/Backups";
 import Templates from "./pages/Templates";
 import BatchProcessing from "./pages/BatchProcessing";
 
+import ScheduledShares from "./pages/ScheduledShares";
+
 // Add support for crypto-js
 declare global {
   interface Window {
@@ -76,6 +78,7 @@ const App = () => (
                     <Route path="/backups" element={<Backups />} />
                     <Route path="/templates" element={<Templates />} />
                     <Route path="/batch-processing" element={<BatchProcessing />} />
+                    <Route path="/scheduled-shares" element={<ScheduledShares />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

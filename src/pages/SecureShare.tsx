@@ -47,6 +47,8 @@ const SecureShare = () => {
   const [scheduleDelivery, setScheduleDelivery] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Date>();
   const [scheduledTime, setScheduledTime] = useState('12:00');
+  const [recurrenceType, setRecurrenceType] = useState('none');
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<Date>();
 
   const text = isArabic ? {
     title: 'المشاركة الآمنة',
@@ -77,6 +79,16 @@ const SecureShare = () => {
     pickDate: 'اختر التاريخ',
     scheduledFor: 'مجدول لـ',
     sendNow: 'إرسال فوري',
+    recurrenceType: 'نوع التكرار',
+    none: 'بدون تكرار',
+    daily: 'يومي',
+    weekly: 'أسبوعي',
+    monthly: 'شهري',
+    recurrenceEnd: 'نهاية التكرار',
+    quickTemplates: 'قوالب سريعة',
+    tomorrowMorning: 'غداً الصباح (9 ص)',
+    afterWeek: 'بعد أسبوع',
+    endOfMonth: 'نهاية الشهر',
     myShares: 'روابط المشاركة الخاصة بي',
     fileName: 'اسم الملف',
     expiresAt: 'تنتهي في',
@@ -126,6 +138,16 @@ const SecureShare = () => {
     pickDate: 'Pick a date',
     scheduledFor: 'Scheduled for',
     sendNow: 'Send Now',
+    recurrenceType: 'Recurrence Type',
+    none: 'No Recurrence',
+    daily: 'Daily',
+    weekly: 'Weekly',
+    monthly: 'Monthly',
+    recurrenceEnd: 'Recurrence End',
+    quickTemplates: 'Quick Templates',
+    tomorrowMorning: 'Tomorrow Morning (9 AM)',
+    afterWeek: 'After One Week',
+    endOfMonth: 'End of Month',
     myShares: 'My Shared Links',
     fileName: 'File Name',
     expiresAt: 'Expires At',
@@ -237,10 +259,16 @@ const SecureShare = () => {
 
       // Calculate scheduled send time if scheduled
       let scheduledSendAt = null;
+      let nextSendAt = null;
       if (sendEmail && scheduleDelivery && scheduledDate) {
         const [hours, minutes] = scheduledTime.split(':').map(Number);
         scheduledSendAt = new Date(scheduledDate);
         scheduledSendAt.setHours(hours, minutes, 0, 0);
+        
+        // Set next_send_at for recurring schedules
+        if (recurrenceType !== 'none') {
+          nextSendAt = scheduledSendAt;
+        }
       }
 
       // Prepare details object with recipient info
@@ -265,6 +293,9 @@ const SecureShare = () => {
           expires_at: expiresAt.toISOString(),
           max_downloads: maxDownloads ? parseInt(maxDownloads) : null,
           scheduled_send_at: scheduledSendAt?.toISOString() || null,
+          recurrence_type: recurrenceType,
+          recurrence_end_date: recurrenceEndDate?.toISOString() || null,
+          next_send_at: nextSendAt?.toISOString() || null,
           details: Object.keys(details).length > 0 ? details : null,
         })
         .select()
@@ -320,6 +351,8 @@ const SecureShare = () => {
       setScheduleDelivery(false);
       setScheduledDate(undefined);
       setScheduledTime('12:00');
+      setRecurrenceType('none');
+      setRecurrenceEndDate(undefined);
       
       // Refresh list
       fetchSharedFiles();
@@ -376,6 +409,32 @@ const SecureShare = () => {
 
   const isExpired = (expiresAt: string) => {
     return new Date(expiresAt) < new Date();
+  };
+
+  const applyQuickTemplate = (template: string) => {
+    const now = new Date();
+    let newDate = new Date();
+    let newTime = '09:00';
+
+    switch (template) {
+      case 'tomorrow':
+        newDate.setDate(now.getDate() + 1);
+        newDate.setHours(9, 0, 0, 0);
+        break;
+      case 'week':
+        newDate.setDate(now.getDate() + 7);
+        newDate.setHours(9, 0, 0, 0);
+        break;
+      case 'month':
+        newDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        newDate.setHours(18, 0, 0, 0);
+        newTime = '18:00';
+        break;
+    }
+
+    setScheduledDate(newDate);
+    setScheduledTime(newTime);
+    setScheduleDelivery(true);
   };
 
   return (
@@ -549,6 +608,84 @@ const SecureShare = () => {
                         onChange={(e) => setScheduledTime(e.target.value)}
                       />
                     </div>
+
+                    {/* Quick Templates */}
+                    <div className="space-y-2">
+                      <Label>{text.quickTemplates}</Label>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => applyQuickTemplate('tomorrow')}
+                        >
+                          {text.tomorrowMorning}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => applyQuickTemplate('week')}
+                        >
+                          {text.afterWeek}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => applyQuickTemplate('month')}
+                        >
+                          {text.endOfMonth}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Recurrence Type */}
+                    <div className="space-y-2">
+                      <Label>{text.recurrenceType}</Label>
+                      <Select value={recurrenceType} onValueChange={setRecurrenceType}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{text.none}</SelectItem>
+                          <SelectItem value="daily">{text.daily}</SelectItem>
+                          <SelectItem value="weekly">{text.weekly}</SelectItem>
+                          <SelectItem value="monthly">{text.monthly}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Recurrence End Date */}
+                    {recurrenceType !== 'none' && (
+                      <div className="space-y-2">
+                        <Label>{text.recurrenceEnd}</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !recurrenceEndDate && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {recurrenceEndDate ? format(recurrenceEndDate, "PPP") : <span>{text.pickDate}</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={recurrenceEndDate}
+                              onSelect={setRecurrenceEndDate}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
                   </div>
                 )}
               </>
