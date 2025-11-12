@@ -21,7 +21,8 @@ import {
   HardDrive,
   Layout,
   FolderOpen,
-  Clock
+  Clock,
+  Bell
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
@@ -87,7 +88,8 @@ export function AppSidebar() {
     statistics: "الإحصائيات",
     activityLog: "سجل الأنشطة",
     backups: "النسخ الاحتياطية",
-    batchProcessing: "المعالجة الدفعية"
+    batchProcessing: "المعالجة الدفعية",
+    notifications: "الإشعارات"
   } : {
     home: "Home",
     tools: "Encryption Tools",
@@ -105,7 +107,8 @@ export function AppSidebar() {
     statistics: "Statistics",
     activityLog: "Activity Log",
     backups: "Backups",
-    batchProcessing: "Batch Processing"
+    batchProcessing: "Batch Processing",
+    notifications: "Notifications"
   };
 
   const isActive = (path: string) => currentPath === path;
@@ -131,6 +134,7 @@ export function AppSidebar() {
   ];
 
   const accountItems = currentUser ? [
+    { title: text.notifications, url: "/notifications", icon: Bell },
     { title: text.profile, url: "/profile", icon: User },
     { title: text.settings, url: "/settings", icon: Settings },
     { title: text.statistics, url: "/statistics", icon: BarChart3 },

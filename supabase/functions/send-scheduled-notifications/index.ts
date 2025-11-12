@@ -139,6 +139,20 @@ const handler = async (req: Request): Promise<Response> => {
 
         console.log(`Email sent for share ${share.id}:`, emailResponse);
 
+        // إنشاء إشعار داخل التطبيق للمستخدم
+        try {
+          await supabase.from('notifications').insert({
+            user_id: share.user_id,
+            title: share.recurrence_type !== 'none' ? 'تم إرسال ملف متكرر' : 'تم إرسال ملف مجدول',
+            message: `تم إرسال الملف "${share.file_name}" إلى ${details.recipient_email} بنجاح`,
+            type: 'success',
+            related_share_id: share.id,
+          });
+          console.log(`In-app notification created for share ${share.id}`);
+        } catch (notifError) {
+          console.error(`Error creating notification for share ${share.id}:`, notifError);
+        }
+
         // تحديث حالة الإرسال وحساب الإرسال التالي للتكرارات
         const updates: any = {
           notification_sent: true,

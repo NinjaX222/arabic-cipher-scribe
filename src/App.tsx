@@ -32,6 +32,7 @@ import Templates from "./pages/Templates";
 import BatchProcessing from "./pages/BatchProcessing";
 
 import ScheduledShares from "./pages/ScheduledShares";
+import Notifications from "./pages/Notifications";
 
 // Add support for crypto-js
 declare global {
@@ -79,6 +80,7 @@ const App = () => (
                     <Route path="/templates" element={<Templates />} />
                     <Route path="/batch-processing" element={<BatchProcessing />} />
                     <Route path="/scheduled-shares" element={<ScheduledShares />} />
+                    <Route path="/notifications" element={<Notifications />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

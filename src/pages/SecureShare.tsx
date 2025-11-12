@@ -9,14 +9,16 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Share2, Copy, Trash2, ExternalLink, Mail, CalendarIcon, Clock } from 'lucide-react';
+import { Upload, Share2, Copy, Trash2, ExternalLink, Mail, CalendarIcon, Clock, QrCode } from 'lucide-react';
 import { encryptAES } from '@/utils/encryption';
 import { logActivity } from '@/utils/activityLogger';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import CryptoJS from 'crypto-js';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface SharedFile {
   id: string;
@@ -96,6 +98,7 @@ const SecureShare = () => {
     copyLink: 'نسخ الرابط',
     openLink: 'فتح الرابط',
     deleteLink: 'حذف الرابط',
+    showQR: 'عرض QR Code',
     linkCopied: 'تم نسخ الرابط',
     linkDeleted: 'تم حذف الرابط',
     uploadSuccess: 'تم إنشاء رابط المشاركة بنجاح',
@@ -155,6 +158,7 @@ const SecureShare = () => {
     copyLink: 'Copy Link',
     openLink: 'Open Link',
     deleteLink: 'Delete Link',
+    showQR: 'Show QR Code',
     linkCopied: 'Link copied to clipboard',
     linkDeleted: 'Link deleted successfully',
     uploadSuccess: 'Share link created successfully',
@@ -735,6 +739,35 @@ const SecureShare = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            title={text.showQR}
+                          >
+                            <QrCode className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>{text.showQR}</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex flex-col items-center justify-center p-6 space-y-4">
+                            <div className="bg-white p-4 rounded-lg">
+                              <QRCodeSVG
+                                value={`${window.location.origin}/shared/${share.share_token}`}
+                                size={256}
+                                level="H"
+                                includeMargin
+                              />
+                            </div>
+                            <p className="text-sm text-muted-foreground text-center">
+                              {share.file_name}
+                            </p>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                       <Button
                         variant="outline"
                         size="icon"
