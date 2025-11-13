@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TwoFactorSetup } from "@/components/TwoFactorSetup";
 
 const Settings = () => {
   const { isArabic, toggleLanguage, isDarkMode, toggleDarkMode } = useCipher();
@@ -276,22 +277,6 @@ const Settings = () => {
                       {isArabic ? "تغيير" : "Change"}
                     </Button>
                   </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        <label className="text-sm font-medium">{text.twoFactor}</label>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{text.twoFactorDesc}</p>
-                    </div>
-                    <Switch 
-                      defaultChecked={false}
-                      onCheckedChange={() => toast.info(isArabic ? "قريباً..." : "Coming soon...")}
-                    />
-                  </div>
                 </>
               ) : (
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -301,6 +286,9 @@ const Settings = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Two-Factor Authentication */}
+          {user && <TwoFactorSetup />}
         </div>
       </div>
     </div>

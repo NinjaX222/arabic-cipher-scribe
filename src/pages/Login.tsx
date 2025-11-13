@@ -9,13 +9,18 @@ import { useCipher } from "@/contexts/CipherContext";
 import Header from "@/components/Header";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TwoFactorVerification } from "@/components/TwoFactorVerification";
+import { use2FA } from "@/hooks/use2FA";
 
 const Login = () => {
   const { isArabic } = useCipher();
   const navigate = useNavigate();
+  const { fetch2FA, twoFactorAuth } = use2FA();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [tempUserId, setTempUserId] = useState<string | null>(null);
+  const [show2FA, setShow2FA] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -65,16 +70,34 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
         toast.error(error.message);
-      } else {
-        toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
-        navigate("/");
+        return;
+      }
+
+      if (data.user) {
+        // Check if user has 2FA enabled
+        const { data: twoFactorData } = await supabase
+          .from('two_factor_auth')
+          .select('is_enabled')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
+
+        if (twoFactorData?.is_enabled) {
+          // Log out immediately and require 2FA
+          await supabase.auth.signOut();
+          setTempUserId(data.user.id);
+          setShow2FA(true);
+          await fetch2FA();
+        } else {
+          toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
+          navigate("/");
+        }
       }
     } catch (error) {
       toast.error(isArabic ? "حدث خطأ أثناء تسجيل الدخول" : "An error occurred during login");
@@ -83,12 +106,45 @@ const Login = () => {
     }
   };
 
+  const handle2FASuccess = async () => {
+    // Re-authenticate after 2FA verification
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
+      navigate("/");
+    } catch (error) {
+      toast.error(isArabic ? "حدث خطأ أثناء تسجيل الدخول" : "An error occurred during login");
+    }
+  };
+
+  const handle2FACancel = () => {
+    setShow2FA(false);
+    setTempUserId(null);
+    setPassword('');
+  };
+
   return (
     <div className={`min-h-screen flex flex-col ${isArabic ? "rtl font-arabic" : ""}`}>
       <Header />
       
       <main className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+        {show2FA ? (
+          <TwoFactorVerification
+            isArabic={isArabic}
+            onSuccess={handle2FASuccess}
+            onCancel={handle2FACancel}
+          />
+        ) : (
+          <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">{text.title}</CardTitle>
             <CardDescription>{text.subtitle}</CardDescription>
@@ -165,6 +221,7 @@ const Login = () => {
             </CardFooter>
           </form>
         </Card>
+        )}
       </main>
     </div>
   );
