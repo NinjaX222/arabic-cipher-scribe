@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import * as OTPAuth from 'otpauth';
+import { authenticator } from 'otplib';
 
 interface TwoFactorAuth {
   id: string;
@@ -53,8 +53,7 @@ export const use2FA = () => {
       }
 
       // Generate a random secret
-      const secret = new OTPAuth.Secret({ size: 20 });
-      const secretBase32 = secret.base32;
+      const secretBase32 = authenticator.generateSecret();
 
       // Generate backup codes
       const backupCodes = Array.from({ length: 10 }, () => 
@@ -78,18 +77,15 @@ export const use2FA = () => {
       setTwoFactorAuth(data);
       
       // Create TOTP URI for QR code
-      const totp = new OTPAuth.TOTP({
-        issuer: 'SecureVault',
-        label: user.email || 'User',
-        algorithm: 'SHA1',
-        digits: 6,
-        period: 30,
-        secret: OTPAuth.Secret.fromBase32(secretBase32)
-      });
+      const qrCodeUri = authenticator.keyuri(
+        user.email || 'User',
+        'SecureVault',
+        secretBase32
+      );
 
       return {
         secret: secretBase32,
-        qrCodeUri: totp.toString(),
+        qrCodeUri,
         backupCodes
       };
     } catch (error) {
@@ -107,16 +103,10 @@ export const use2FA = () => {
       }
 
       // Verify the code
-      const totp = new OTPAuth.TOTP({
-        issuer: 'SecureVault',
-        label: user.email || 'User',
-        algorithm: 'SHA1',
-        digits: 6,
-        period: 30,
-        secret: OTPAuth.Secret.fromBase32(twoFactorAuth.secret)
+      const isValid = authenticator.verify({
+        token: verificationCode,
+        secret: twoFactorAuth.secret
       });
-
-      const isValid = totp.validate({ token: verificationCode, window: 1 }) !== null;
 
       if (!isValid) {
         throw new Error('Invalid verification code');
@@ -183,16 +173,11 @@ export const use2FA = () => {
       }
 
       // Verify TOTP code
-      const totp = new OTPAuth.TOTP({
-        issuer: 'SecureVault',
-        label: 'User',
-        algorithm: 'SHA1',
-        digits: 6,
-        period: 30,
-        secret: OTPAuth.Secret.fromBase32(twoFactorAuth.secret)
+      const isValid = authenticator.verify({
+        token: code,
+        secret: twoFactorAuth.secret
       });
 
-      const isValid = totp.validate({ token: code, window: 1 }) !== null;
       return isValid;
     } catch (error) {
       console.error('Error verifying 2FA code:', error);
