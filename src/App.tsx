@@ -34,14 +34,6 @@ import BatchProcessing from "./pages/BatchProcessing";
 import ScheduledShares from "./pages/ScheduledShares";
 import Notifications from "./pages/Notifications";
 
-// Add support for crypto-js
-declare global {
-  interface Window {
-    crypto: {
-      getRandomValues: (array: Uint8Array) => Uint8Array;
-    };
-  }
-}
 
 const queryClient = new QueryClient();
 

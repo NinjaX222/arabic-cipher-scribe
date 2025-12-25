@@ -95,38 +95,26 @@ const SharedFileView = () => {
     }
 
     try {
+      // Use secure RPC function to fetch file data
       const { data, error } = await supabase
-        .from('shared_files')
-        .select('*')
-        .eq('share_token', token)
-        .maybeSingle();
+        .rpc('get_shared_file_by_token', { p_share_token: token });
 
       if (error) throw error;
 
-      if (!data) {
+      if (!data || data.length === 0) {
         setError(text.notFound);
         return;
       }
 
-      // Check if expired
-      if (new Date(data.expires_at) < new Date()) {
-        setError(text.expired);
-        return;
-      }
-
-      // Check if max downloads reached
-      if (data.max_downloads && data.download_count >= data.max_downloads) {
-        setError(text.maxDownloadsReached);
-        return;
-      }
-
+      const fileInfo = data[0];
+      
       // Check if active
-      if (!data.is_active) {
+      if (!fileInfo.is_active) {
         setError(text.notFound);
         return;
       }
 
-      setFileData(data);
+      setFileData(fileInfo as SharedFileData);
     } catch (error) {
       console.error('Error fetching file:', error);
       setError(text.notFound);
@@ -189,14 +177,8 @@ const SharedFileView = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      // Update download count
-      await supabase
-        .from('shared_files')
-        .update({
-          download_count: fileData.download_count + 1,
-          last_accessed_at: new Date().toISOString(),
-        })
-        .eq('id', fileData.id);
+      // Update download count using secure RPC function
+      await supabase.rpc('increment_download_count', { p_share_token: token });
 
       toast({ title: text.downloadSuccess });
 
