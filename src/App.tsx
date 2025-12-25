@@ -33,6 +33,10 @@ import BatchProcessing from "./pages/BatchProcessing";
 
 import ScheduledShares from "./pages/ScheduledShares";
 import Notifications from "./pages/Notifications";
+import ChangePassword from "./pages/ChangePassword";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import { SessionTimeoutProvider } from "./components/SessionTimeoutProvider";
 
 
 const queryClient = new QueryClient();
@@ -48,6 +52,7 @@ const App = () => (
             <div className="min-h-screen flex w-full">
               <AppSidebar />
               <main className="flex-1">
+                <SessionTimeoutProvider>
                 <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/text-encryption" element={<TextEncryption />} />
@@ -73,9 +78,14 @@ const App = () => (
                     <Route path="/batch-processing" element={<BatchProcessing />} />
                     <Route path="/scheduled-shares" element={<ScheduledShares />} />
                     <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/change-password" element={<ChangePassword />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
+                    <Route path="*" element={<NotFound />} />
                   </Routes>
+                </SessionTimeoutProvider>
                 </main>
               </div>
           </SidebarProvider>
