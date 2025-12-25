@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TwoFactorSetup } from "@/components/TwoFactorSetup";
+import { SessionSecurityCard } from "@/components/SessionSecurityCard";
 
 const Settings = () => {
   const { isArabic, toggleLanguage, isDarkMode, toggleDarkMode } = useCipher();
@@ -272,7 +273,7 @@ const Settings = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => toast.info(isArabic ? "قريباً..." : "Coming soon...")}
+                      onClick={() => navigate("/change-password")}
                     >
                       {isArabic ? "تغيير" : "Change"}
                     </Button>
@@ -286,6 +287,9 @@ const Settings = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Session Security */}
+          {user && <SessionSecurityCard isArabic={isArabic} />}
 
           {/* Two-Factor Authentication */}
           {user && <TwoFactorSetup />}
