@@ -22,7 +22,10 @@ import {
   Layout,
   FolderOpen,
   Clock,
-  Bell
+  Bell,
+  Key,
+  AlertTriangle,
+  FileBarChart
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useCipher } from "@/contexts/CipherContext";
@@ -89,7 +92,10 @@ export function AppSidebar() {
     activityLog: "سجل الأنشطة",
     backups: "النسخ الاحتياطية",
     batchProcessing: "المعالجة الدفعية",
-    notifications: "الإشعارات"
+    notifications: "الإشعارات",
+    passwordManager: "مدير كلمات المرور",
+    emergencyMode: "وضع الطوارئ",
+    securityReports: "التقارير الأمنية"
   } : {
     home: "Home",
     tools: "Encryption Tools",
@@ -108,7 +114,10 @@ export function AppSidebar() {
     activityLog: "Activity Log",
     backups: "Backups",
     batchProcessing: "Batch Processing",
-    notifications: "Notifications"
+    notifications: "Notifications",
+    passwordManager: "Password Manager",
+    emergencyMode: "Emergency Mode",
+    securityReports: "Security Reports"
   };
 
   const isActive = (path: string) => currentPath === path;
@@ -137,9 +146,12 @@ export function AppSidebar() {
     { title: text.notifications, url: "/notifications", icon: Bell },
     { title: text.profile, url: "/profile", icon: User },
     { title: text.settings, url: "/settings", icon: Settings },
+    { title: text.passwordManager, url: "/password-manager", icon: Key },
+    { title: text.securityReports, url: "/security-reports", icon: FileBarChart },
     { title: text.statistics, url: "/statistics", icon: BarChart3 },
     { title: text.activityLog, url: "/activity-log", icon: History },
     { title: text.backups, url: "/backups", icon: HardDrive },
+    { title: text.emergencyMode, url: "/emergency-mode", icon: AlertTriangle },
   ] : [
     { title: text.login, url: "/login", icon: LogIn },
     { title: text.signUp, url: "/signup", icon: UserPlus },

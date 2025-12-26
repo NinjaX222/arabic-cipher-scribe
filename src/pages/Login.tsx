@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TwoFactorVerification } from "@/components/TwoFactorVerification";
 import { use2FA } from "@/hooks/use2FA";
+import { logLoginAttempt } from "@/utils/securityNotifications";
 
 const Login = () => {
   const { isArabic } = useCipher();
@@ -95,6 +96,8 @@ const Login = () => {
           setShow2FA(true);
           await fetch2FA();
         } else {
+          // Log successful login and check for new device
+          await logLoginAttempt(data.user.id, true, isArabic);
           toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
           navigate("/");
         }
@@ -117,6 +120,12 @@ const Login = () => {
       if (error) {
         toast.error(error.message);
         return;
+      }
+
+      // Get user and log login
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await logLoginAttempt(user.id, true, isArabic);
       }
 
       toast.success(isArabic ? "تم تسجيل الدخول بنجاح" : "Login successful");
