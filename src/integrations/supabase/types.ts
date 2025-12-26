@@ -151,6 +151,45 @@ export type Database = {
           },
         ]
       }
+      password_vault: {
+        Row: {
+          category: string | null
+          created_at: string
+          encrypted_password: string
+          id: string
+          notes: string | null
+          site_name: string
+          site_url: string | null
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          encrypted_password: string
+          id?: string
+          notes?: string | null
+          site_name: string
+          site_url?: string | null
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          encrypted_password?: string
+          id?: string
+          notes?: string | null
+          site_name?: string
+          site_url?: string | null
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -207,6 +246,51 @@ export type Database = {
           expires_at?: string | null
           id?: string
           size_bytes?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      security_reports: {
+        Row: {
+          created_at: string
+          failed_attempts: number | null
+          id: string
+          new_devices: number | null
+          report_data: Json | null
+          report_month: string
+          security_score: number | null
+          total_decryptions: number | null
+          total_encryptions: number | null
+          total_logins: number | null
+          total_shares: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          failed_attempts?: number | null
+          id?: string
+          new_devices?: number | null
+          report_data?: Json | null
+          report_month: string
+          security_score?: number | null
+          total_decryptions?: number | null
+          total_encryptions?: number | null
+          total_logins?: number | null
+          total_shares?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          failed_attempts?: number | null
+          id?: string
+          new_devices?: number | null
+          report_data?: Json | null
+          report_month?: string
+          security_score?: number | null
+          total_decryptions?: number | null
+          total_encryptions?: number | null
+          total_logins?: number | null
+          total_shares?: number | null
           user_id?: string
         }
         Relationships: []

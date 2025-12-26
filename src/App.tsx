@@ -36,6 +36,9 @@ import Notifications from "./pages/Notifications";
 import ChangePassword from "./pages/ChangePassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import PasswordManager from "./pages/PasswordManager";
+import EmergencyMode from "./pages/EmergencyMode";
+import SecurityReports from "./pages/SecurityReports";
 import { SessionTimeoutProvider } from "./components/SessionTimeoutProvider";
 
 
@@ -81,8 +84,10 @@ const App = () => (
                     <Route path="/change-password" element={<ChangePassword />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/password-manager" element={<PasswordManager />} />
+                    <Route path="/emergency-mode" element={<EmergencyMode />} />
+                    <Route path="/security-reports" element={<SecurityReports />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </SessionTimeoutProvider>
